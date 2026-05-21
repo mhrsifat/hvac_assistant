@@ -1,9 +1,10 @@
-import { defineConfig } from 'vite';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import laravel from 'laravel-vite-plugin';
-// Uncomment the import for your frontend framework:
-// import vue from '@vitejs/plugin-vue';
-// import react from '@vitejs/plugin-react';
-// import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { defineConfig } from 'vite';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
     build: {
@@ -11,31 +12,22 @@ export default defineConfig({
         emptyOutDir: true,
         manifest: true,
     },
+
     plugins: [
         laravel({
             publicDirectory: '../../public',
             buildDirectory: 'build-legal',
             input: [
-                __dirname + '/resources/assets/sass/app.scss',
-                __dirname + '/resources/assets/js/app.js'
+                resolve(__dirname, 'resources/assets/sass/app.scss'),
+                resolve(__dirname, 'resources/assets/js/app.js'),
             ],
             refresh: true,
         }),
-        // Uncomment the plugin for your frontend framework:
-        // vue({
-        //     template: {
-        //         transformAssetUrls: {
-        //             base: null,
-        //             includeAbsolute: false,
-        //         },
-        //     },
-        // }),
-        // react(),
-        // svelte(),
     ],
+
     resolve: {
         alias: {
-            '@': __dirname + '/resources/js',
+            '@': resolve(__dirname, 'resources/js'),
         },
     },
 });

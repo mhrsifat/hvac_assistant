@@ -1,26 +1,16 @@
 import {
     AdjustmentsHorizontalIcon,
-    BanknotesIcon,
-    BookOpenIcon,
     ChartBarIcon,
     ClockIcon,
     CloudIcon,
     Cog6ToothIcon,
-    CpuChipIcon,
-    CubeIcon,
-    DocumentTextIcon,
     GlobeAltIcon,
     HeartIcon,
     HomeIcon,
     KeyIcon,
     LifebuoyIcon,
-    QueueListIcon,
     ServerIcon,
-    ServerStackIcon,
     ShieldCheckIcon,
-    ShoppingBagIcon,
-    ScaleIcon,
-    Squares2X2Icon,
     SquaresPlusIcon,
     UserIcon,
     UsersIcon,
@@ -28,13 +18,13 @@ import {
     WrenchIcon,
 } from '@heroicons/react/24/outline';
 import type { InertiaLinkProps } from '@inertiajs/react';
+import { FileText, Palette, Scale } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
 import { dashboard } from '@/routes';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 // import { show as showTwoFactor } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
-import { FileText, Palette, Scale } from 'lucide-react';
 
 type AdminMenuHref = NonNullable<InertiaLinkProps['href']>;
 

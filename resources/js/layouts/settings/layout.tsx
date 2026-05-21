@@ -1,10 +1,8 @@
 import { Link } from '@inertiajs/react';
 import {
-    FileText,
     GlobeIcon,
     KeyRound,
     Palette,
-    Scale,
     User,
 } from 'lucide-react';
 import type { PropsWithChildren } from 'react';

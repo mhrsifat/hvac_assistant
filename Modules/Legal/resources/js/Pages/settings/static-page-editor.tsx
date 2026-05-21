@@ -1,3 +1,9 @@
+import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import AdminLayout from '@/layouts/AdminLayout';
 import { Transition } from '@headlessui/react';
 import { Form, Head, usePage } from '@inertiajs/react';
 import UnderlineExtension from '@tiptap/extension-underline';
@@ -23,12 +29,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AdminLayout from '@/layouts/AdminLayout';
 
 type StaticPageContent = {
   body?: string | null;

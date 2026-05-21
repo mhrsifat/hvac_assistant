@@ -1,12 +1,13 @@
-import { Head, Form, usePage } from '@inertiajs/react';
-import { Camera, Globe2, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
-import { ChangeEvent, useRef, useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminSettingsLayout from '@/layouts/settings/admin-settings-layout';
+import { Head, Form, usePage } from '@inertiajs/react';
+import { Camera, Globe2, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
+import type { ChangeEvent} from 'react';
 
 type SystemBranding = {
   system_name?: string | null;
