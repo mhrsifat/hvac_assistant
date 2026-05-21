@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\Settings;
 use App\Concerns\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Admin\UpdateSmtpSettingsRequest;
-use App\Http\Requests\Api\Settings\UpdateAiProviderApiKeyRequest;
 use App\Services\Api\Settings\SettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -38,37 +37,6 @@ class SettingsController extends Controller
             ]);
 
             return $this->error(500, 'Failed to update SMTP settings: '.$e->getMessage());
-        }
-    }
-
-    public function getAvailableAiProviders(): JsonResponse
-    {
-        return $this->success(200, 'Available AI providers fetched successfully.', [
-            'providers' => $this->settingsService->listAvailableAiProviders(),
-        ]);
-    }
-
-    public function setAiProviderApiKey(UpdateAiProviderApiKeyRequest $request): JsonResponse
-    {
-        try {
-            $validated = $request->validated();
-            $isUpdated = $this->settingsService->setAiProviderApiKey(
-                $validated['provider'],
-                $validated['key']
-            );
-
-            if (! $isUpdated) {
-                return $this->error(422, 'Selected AI provider is not supported.');
-            }
-
-            return $this->success(200, 'AI provider API key updated successfully.');
-        } catch (Throwable $e) {
-            Log::error('Failed to update AI provider API key', [
-                'user_id' => auth('api')->id(),
-                'error' => $e->getMessage(),
-            ]);
-
-            return $this->error(500, 'Failed to update AI provider API key: '.$e->getMessage());
         }
     }
 }
