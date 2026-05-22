@@ -17,22 +17,22 @@ jobs:
           fetch-depth: 0
 
       # 2. Set up PHP
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: mbstring, pdo_mysql, dom, fileinfo, tokenizer, xml, curl
-          coverage: none
+      # - name: Set up PHP
+      #   uses: shivammathur/setup-php@v2
+      #   with:
+      #     php-version: '8.4'
+      #     extensions: mbstring, pdo_mysql, dom, fileinfo, tokenizer, xml, curl
+      #     coverage: none
 
       # 3. Cache and install Composer dependencies
-      - name: Setup Composer cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+      # - name: Setup Composer cache
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.composer/cache
+      #     key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
 
-      - name: Install PHP dependencies
-        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+      # - name: Install PHP dependencies
+      #   run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
       # 4. Setup Node.js and cache npm
       - name: Setup Node.js
@@ -53,13 +53,13 @@ jobs:
           npm run build
 
       # 6. Prepare optimized framework caches
-      - name: Artisan optimize
-        env:
-          APP_ENV: production
-        run: |
-          php artisan config:cache || true
-          php artisan route:cache || true
-          php artisan view:cache || true
+      # - name: Artisan optimize
+      #   env:
+      #     APP_ENV: production
+      #   run: |
+      #     php artisan config:cache || true
+      #     php artisan route:cache || true
+      #     php artisan view:cache || true
 
       # 7. Deploy via FTP
       - name: Deploy via FTP
