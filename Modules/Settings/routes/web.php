@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Settings\Http\Controllers\IntegrationSettingController;
 use Modules\Settings\Http\Controllers\SettingsController;
 use Modules\Settings\Http\Controllers\SystemSettingController;
+use Modules\Settings\Http\Controllers\DevelopmentController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:super-admin|admin')->group(function () {
@@ -27,6 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('integration-settings.ai.update');
         });
     });
+
+    Route::get('settings/development/chat-broadcast-tester', [DevelopmentController::class, 'broadcastTester'])
+        ->name('development.chat-broadcast-tester')
+        ->middleware('role:super-admin|admin');
 
     Route::resource('settings', SettingsController::class)->names('settings');
 });

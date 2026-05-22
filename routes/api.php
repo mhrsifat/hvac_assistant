@@ -1,12 +1,19 @@
 <?php
 
+use App\Http\Controllers\ChatController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:api');
+Route::middleware('auth:api')->group(function (): void {
+  Route::post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
+  });
 
-require __DIR__.'/Api/auth.php';
-require __DIR__.'/Api/user.php';
-require __DIR__.'/Api/settings.php';
+  Route::post('/chats', [ChatController::class, 'store']);
+  Route::post('/chats/{chat}/messages', [ChatController::class, 'sendMessage']);
+});
+
+require __DIR__ . '/Api/auth.php';
+require __DIR__ . '/Api/user.php';
+require __DIR__ . '/Api/settings.php';

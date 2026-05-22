@@ -35,7 +35,7 @@ Use the real database columns exactly as they exist in the migrations. Do not gu
 ## chat_messages
 
 - `chat_id`: parent chat.
-- `sender_id`: user who sent the message when the sender is a person.
+- `sender_id`: user who sent the message when the sender is a person; null for assistant or system messages.
 - `sender_role`: message origin such as user, assistant, or system.
 - `content`: message body.
 - `attachment_path`: stored file path for an uploaded image or document.
@@ -49,9 +49,15 @@ Use the real database columns exactly as they exist in the migrations. Do not gu
 - `status`: report state such as completed.
 - `pdf_path`: stored path to the exported PDF report.
 
+## manual_vectors
+
+- `content`: source knowledge text stored for semantic retrieval.
+- `embedding`: pgvector embedding for the stored content.
+
 ## Rules for the agent
 
 - Prefer the existing model classes in `app/Models`.
 - Use the actual migration columns before adding new model attributes.
 - If a field name is unclear, inspect the migration first rather than guessing.
 - Keep the MySQL relational data separate from the PostgreSQL vector database in `Modules/Vector`.
+- Do not invent columns such as `source_document`, `page_number`, or `brand_id` for the vector table unless the migration adds them first.

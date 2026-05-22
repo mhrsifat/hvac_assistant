@@ -1,22 +1,18 @@
 <?php
 
-namespace Modules\Vectore\Services;
+namespace Modules\Vector\Services;
 
 use Illuminate\Support\Facades\DB;
 
 class VectorQueryService
 {
-    public function findSimilarContext(string $queryVector, int $brandId = null, int $limit = 3): array
+    public function findSimilarContext(string $queryVector, int $limit = 3): array
     {
         $query = DB::connection('pgsql_vector')
             ->table('manual_vectors')
-            ->select('content', 'source_document', 'page_number')
-            ->orderByRaw('embedding <=> TO_VECTOR(?)', [$queryVector])
+            ->selectRaw('id, content, embedding <=> ?::vector as distance', [$queryVector])
+            ->orderBy('distance')
             ->limit($limit);
-
-        if ($brandId) {
-            $query->where('brand_id', $brandId);
-        }
 
         return $query->get()->toArray();
     }

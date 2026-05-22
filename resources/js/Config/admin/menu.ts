@@ -258,6 +258,23 @@ export const adminMenuSections: AdminMenuSection[] = [
                 ],
             },
             {
+                id: 'development-tools',
+                title: 'Development',
+                href: null,
+                icon: WrenchIcon,
+                permissions: ['manage settings'],
+                roles: ['super-admin', 'admin'],
+                children: [
+                    {
+                        id: 'development-chat-broadcast-tester',
+                        title: 'Chat broadcast tester',
+                        href: '/settings/development/chat-broadcast-tester',
+                        permissions: ['manage settings'],
+                        roles: ['super-admin', 'admin'],
+                    },
+                ],
+            },
+            {
                 id: 'users',
                 title: 'User management',
                 href: null,

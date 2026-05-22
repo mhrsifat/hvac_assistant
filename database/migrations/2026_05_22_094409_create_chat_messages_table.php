@@ -13,8 +13,7 @@ return new class extends Migration
         Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('chat_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete();
-            // if ai generated, sender_role = 'assistant', if user generated, sender_role = 'user', if system generated, sender_role = 'system'
+            $table->foreignId('sender_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('sender_role');
             $table->text('content');
             $table->string('attachment_path')->nullable();
