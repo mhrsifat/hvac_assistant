@@ -19,7 +19,7 @@ class LegalPageUpdateRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', 'in:draft,published'],
+            'status' => ['nullable', 'string', 'in:draft,published'],
             'content' => ['required', 'string'],
         ];
     }

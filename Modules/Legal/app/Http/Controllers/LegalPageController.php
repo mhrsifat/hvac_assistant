@@ -29,7 +29,7 @@ class LegalPageController extends Controller
             'type' => $this->typeForSlug($slug),
             'title' => $validated['title'],
             'slug' => $slug,
-            'status' => $validated['status'],
+            'status' => $validated['status'] ?? 'published',
             'content' => [
                 'body' => $validated['content'],
             ],
