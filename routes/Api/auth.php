@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
-use App\Http\Controllers\Api\Auth\SellerAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -25,5 +24,5 @@ Route::prefix('auth')->group(function () {
 
 Route::prefix('auth/seller')->group(function () {
 
-    Route::post('/register', [SellerAuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register']);
 });

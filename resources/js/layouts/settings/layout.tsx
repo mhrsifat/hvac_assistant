@@ -1,36 +1,47 @@
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Link } from '@inertiajs/react';
-import {
-    GlobeIcon,
-    KeyRound,
-    Palette,
-    User,
-} from 'lucide-react';
+import { GlobeIcon, User } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
+import { useEffect, useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
-import { edit as editAppearance } from '@/routes/appearance';
-import { edit } from '@/routes/profile';
-import { edit as editPassword } from '@/routes/user-password';
+import { edit as editProfile } from '@/routes/profile';
 import type { NavItem } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
+type SettingsNavItem = Omit<NavItem, 'href'> & {
+    href?: NavItem['href'];
+    children?: SettingsNavItem[];
+    relatedRoutes?: string[];
+};
+
+const sidebarNavItems: SettingsNavItem[] = [
     {
-        title: 'Profile',
-        href: edit(),
+        title: 'Account settings',
+        href: '/settings/account',
         icon: User,
+        relatedRoutes: [
+            '/settings/account',
+            '/settings/password',
+            '/settings/appearance',
+            toUrl(editProfile()),
+        ],
     },
     {
-        title: 'Password',
-        href: editPassword(),
-        icon: KeyRound,
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-        icon: Palette,
+        title: 'Integration settings',
+        icon: GlobeIcon,
+        children: [
+            {
+                title: 'SMTP settings',
+                href: '/settings/integration/smtp',
+            },
+            {
+                title: 'AI settings',
+                href: '/settings/integration/ai',
+            },
+        ],
     },
     {
         title: 'System Branding',
@@ -39,15 +50,143 @@ const sidebarNavItems: NavItem[] = [
     },
 ];
 
+const normalizePath = (value: string): string => {
+    const [pathWithoutQuery] = value.split('?');
+    const trimmedPath = pathWithoutQuery.replace(/\/+$/, '');
+
+    return trimmedPath.length > 0 ? trimmedPath : '/';
+};
+
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { currentUrl } = useCurrentUrl();
+    const [openSections, setOpenSections] = useState<string[]>([]);
 
     if (typeof window === 'undefined') {
         return null;
     }
 
+    const currentPath = normalizePath(currentUrl || window.location.pathname);
+
+    const isLeafItemActive = (item: SettingsNavItem): boolean => {
+        if (
+            item.relatedRoutes?.some(
+                (route) => normalizePath(toUrl(route)) === currentPath,
+            )
+        ) {
+            return true;
+        }
+
+        if (!item.href) {
+            return false;
+        }
+
+        return normalizePath(toUrl(item.href)) === currentPath;
+    };
+
+    const hasActiveDescendant = (item: SettingsNavItem): boolean => {
+        if (isLeafItemActive(item)) {
+            return true;
+        }
+
+        return Boolean(
+            item.children?.some((childItem) => hasActiveDescendant(childItem)),
+        );
+    };
+
+    useEffect(() => {
+        setOpenSections((previousOpenSections) => {
+            const nextOpenSections = new Set(previousOpenSections);
+
+            sidebarNavItems.forEach((item) => {
+                if (item.children?.length && hasActiveDescendant(item)) {
+                    nextOpenSections.add(item.title);
+                }
+            });
+
+            return Array.from(nextOpenSections);
+        });
+    }, [currentPath]);
+
+    const toggleSection = (title: string): void => {
+        setOpenSections((previousOpenSections) => {
+            if (previousOpenSections.includes(title)) {
+                return previousOpenSections.filter(
+                    (sectionTitle) => sectionTitle !== title,
+                );
+            }
+
+            return [...previousOpenSections, title];
+        });
+    };
+
+    const renderNavItem = (item: SettingsNavItem, depth = 0) => {
+        const hasChildren = Boolean(item.children?.length);
+        const isActive = hasChildren ? hasActiveDescendant(item) : isLeafItemActive(item);
+        const isOpen = hasChildren && (openSections.includes(item.title) || isActive);
+
+        return (
+            <div key={`${item.title}-${depth}`} className="space-y-1">
+                {hasChildren ? (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => toggleSection(item.title)}
+                        className={cn(
+                            'w-full justify-between gap-3 rounded-lg px-4 h-10 font-medium text-muted-foreground hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-50',
+                            isActive &&
+                            'bg-zinc-100 text-zinc-950 font-semibold shadow-sm dark:bg-zinc-900 dark:text-zinc-50',
+                            depth > 0 && 'pl-3',
+                        )}
+                    >
+                        <span className="flex items-center gap-3 truncate">
+                            {item.icon ? (
+                                <item.icon className="h-4 w-4 shrink-0 text-muted-foreground/70 transition-colors" />
+                            ) : null}
+                            <span className="truncate">{item.title}</span>
+                        </span>
+
+                        <ChevronRightIcon
+                            className={cn(
+                                'h-4 w-4 shrink-0 transition-transform duration-200',
+                                isOpen ? 'rotate-90' : '',
+                            )}
+                            aria-hidden="true"
+                        />
+                    </Button>
+                ) : (
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        asChild
+                        className={cn(
+                            'w-auto lg:w-full justify-start gap-3 px-4 h-10 font-medium text-muted-foreground rounded-lg transition-all duration-200 whitespace-nowrap',
+                            isActive &&
+                            'bg-zinc-100 text-zinc-950 font-semibold shadow-sm dark:bg-zinc-900 dark:text-zinc-50',
+                            depth > 0 && 'pl-3',
+                        )}
+                    >
+                        <Link href={item.href!}>
+                            {item.icon ? (
+                                <item.icon className="h-4 w-4 shrink-0 text-muted-foreground/70 transition-colors" />
+                            ) : null}
+                            {item.title}
+                        </Link>
+                    </Button>
+                )}
+
+                {hasChildren && isOpen ? (
+                    <div className="ml-3 space-y-1 border-l border-zinc-200 pl-3 dark:border-zinc-800">
+                        {item.children?.map((childItem) =>
+                            renderNavItem(childItem, depth + 1),
+                        )}
+                    </div>
+                ) : null}
+            </div>
+        );
+    };
+
     return (
-        <div className="max-w-6xl px-4space-y-8">
+        <div className="max-w-6xl px-4 space-y-8">
             <div className="pb-2 border-b border-zinc-100 dark:border-zinc-900">
                 <Heading
                     title="Settings"
@@ -55,48 +194,20 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 />
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-                <aside className="w-full lg:w-64 shrink-0">
+            <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+                <aside className="w-full shrink-0 lg:w-64">
                     <nav
-                        className="flex flex-row lg:flex-col gap-1 overflow-x-auto pb-2 lg:pb-0 no-scrollbar"
+                        className="flex flex-row gap-1 overflow-x-auto pb-2 no-scrollbar lg:flex-col lg:pb-0"
                         aria-label="Settings"
                     >
-                        {sidebarNavItems.map((item, index) => {
-                            const isActive = isCurrentOrParentUrl(item.href);
-                            const Icon = item.icon;
-
-                            return (
-                                <Button
-                                    key={`${toUrl(item.href)}-${index}`}
-                                    size="sm"
-                                    variant="ghost"
-                                    asChild
-                                    className={cn(
-                                        'w-auto lg:w-full justify-start gap-3 px-4 h-10 font-medium text-muted-foreground rounded-lg transition-all duration-200 whitespace-nowrap',
-                                        isActive && 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm dark:bg-zinc-900 dark:text-zinc-50'
-                                    )}
-                                >
-                                    <Link href={item.href}>
-                                        {Icon && (
-                                            <Icon className={cn(
-                                                "h-4 w-4 text-muted-foreground/70 transition-colors",
-                                                isActive && "text-zinc-950 dark:text-zinc-50"
-                                            )} />
-                                        )}
-                                        {item.title}
-                                    </Link>
-                                </Button>
-                            );
-                        })}
+                        {sidebarNavItems.map((item) => renderNavItem(item))}
                     </nav>
                 </aside>
 
-                <Separator className="lg:hidden my-2" />
+                <Separator className="my-2 lg:hidden" />
 
-                <div className="flex-1 min-w-0">
-                    <section className="space-y-6">
-                        {children}
-                    </section>
+                <div className="min-w-0 flex-1">
+                    <section className="space-y-6">{children}</section>
                 </div>
             </div>
         </div>

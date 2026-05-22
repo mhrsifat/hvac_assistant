@@ -5,9 +5,9 @@ use App\Models\User;
 return [
 
     'otp_expires_in' => env('OTP_EXPIRES_IN', 5), // OTP expiration time in minutes
-    'otp_length' => env('OTP_LENGTH', 4), // Length of the OTP code
+    'otp_length' => env('OTP_LENGTH', 6), // Length of the OTP code
     'verification' => [
-        'enabled' => env('OTP_VERIFICATION_ENABLED', false), // Enable or disable OTP verification
+        'enabled' => env('OTP_VERIFICATION_ENABLED', true), // Enable or disable OTP verification
     ],
     'password_reset' => [
         'enabled' => env('PASSWORD_RESET_ENABLED', true), // Enable or disable password reset functionality

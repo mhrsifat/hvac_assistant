@@ -29,12 +29,12 @@ class UpdateProfileRequest extends BaseRequest
             //     Rule::unique('users', 'phone')->ignore($userId),
             // ],
 
-            // 'email' => [
-            //     'nullable',
-            //     'email',
-            //     'max:255',
-            //     Rule::unique('users', 'email')->ignore($userId),
-            // ],
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($userId),
+            ],
 
             'secondary_email' => [
                 'nullable',

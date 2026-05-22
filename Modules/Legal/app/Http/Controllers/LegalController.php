@@ -3,54 +3,28 @@
 namespace Modules\Legal\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Modules\Legal\Models\StaticPage;
 
 class LegalController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function termsAndConditions(): JsonResponse
     {
-        return view('legal::index');
+        $page = StaticPage::forSlug('terms-and-conditions');
+
+        return $this->success(200, 'Terms and conditions fetched successfully', [
+            'title' => $page->title,
+            'content' => $page->content['body'] ?? '',
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function privacyPolicy(): JsonResponse
     {
-        return view('legal::create');
+        $page = StaticPage::forSlug('privacy-policy');
+
+        return $this->success(200, 'Privacy policy fetched successfully', [
+            'title' => $page->title,
+            'content' => $page->content['body'] ?? '',
+        ]);
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
-     */
-    public function show($id)
-    {
-        return view('legal::show');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        return view('legal::edit');
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id) {}
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
 }

@@ -8,10 +8,6 @@ import {
 } from '@/components/ui/card';
 import AdminLayout from '@/layouts/AdminLayout';
 import { dashboard } from '@/routes';
-import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editProfile } from '@/routes/profile';
-// import { show as showTwoFactor } from '@/routes/two-factor';
-import { edit as editPassword } from '@/routes/user-password';
 
 const serverlessProducts = [
     {
@@ -20,27 +16,9 @@ const serverlessProducts = [
         href: dashboard().url,
     },
     {
-        name: 'Profile',
-        description: 'Manage personal and account details',
-        href: editProfile().url,
-    },
-    // {
-    //     name: 'Two-factor authentication',
-    //     description: 'Secure your account with 2FA',
-    //     href: showTwoFactor().url,
-    // },
-    {
-        name: 'Appearance',
-        description: 'Theme and interface preferences',
-        href: editAppearance().url,
-    },
-];
-
-const accountProducts = [
-    {
-        name: 'Password',
-        description: 'Update and rotate your password',
-        href: editPassword().url,
+        name: 'Account settings',
+        description: 'Profile, password, and appearance preferences',
+        href: '/settings/account',
     },
 ];
 
@@ -107,7 +85,7 @@ export default function Dashboard() {
                                 Account
                             </CardTitle>
                             <CardDescription>
-                                Access and identity related pages.
+                                Profile, password, and appearance now live on one dedicated settings page.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="px-0 pb-0">
@@ -124,7 +102,7 @@ export default function Dashboard() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                        {accountProducts.map((item) => (
+                                        {serverlessProducts.slice(1).map((item) => (
                                             <tr key={item.name}>
                                                 <td className="px-4 py-3 font-medium text-blue-700 dark:text-blue-400">
                                                     <Link href={item.href}>

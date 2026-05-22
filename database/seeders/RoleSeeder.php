@@ -56,11 +56,6 @@ class RoleSeeder extends Seeder
             'guard_name' => 'web',
         ]);
 
-        $seller = Role::firstOrCreate([
-            'name' => 'seller',
-            'guard_name' => 'web',
-        ]);
-
         $user = Role::firstOrCreate([
             'name' => 'user',
             'guard_name' => 'web',
@@ -76,7 +71,7 @@ class RoleSeeder extends Seeder
 
         $admin->syncPermissions(Permission::pluck('name'));
 
-        $seller->syncPermissions([
+        $user->syncPermissions([
             'product.view',
             'product.create',
             'product.update',

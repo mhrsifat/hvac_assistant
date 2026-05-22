@@ -4,14 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { Button } from '@/components/ui/button';
-import {
-    adminMenuSections,
-    filterAdminMenuSectionsByAccess,
-} from '@/Config/admin/menu';
-import type { AdminMenuItem } from '@/Config/admin/menu';
 import { getThemeConfig } from '@/Config/theme';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
+import {
+    adminMenuSections,
+    filterAdminMenuSectionsByAccess,
+} from '../../Config/admin/menu';
+import type { AdminMenuItem } from '../../Config/admin/menu';
 
 type SidebarProps = {
     isMiniSidebar: boolean;
@@ -125,6 +125,10 @@ export default function Sidebar({
                 return false;
             }
 
+            if (item.relatedRoutes && item.relatedRoutes.length > 0) {
+                return item.relatedRoutes.some((r) => normalizePath(toUrl(r)) === normalizedCurrentPath);
+            }
+
             const itemPath = normalizePath(toUrl(item.href));
             const isCurrentPath = isCurrentUrl(
                 item.href,
@@ -159,6 +163,19 @@ export default function Sidebar({
         [isLeafItemActive],
     );
 
+    const hasActiveDescendant = useCallback(
+        function checkDescendant(item: AdminMenuItem): boolean {
+            if (isItemActive(item)) {
+                return true;
+            }
+
+            return Boolean(
+                item.children?.some((childItem) => checkDescendant(childItem)),
+            );
+        },
+        [isItemActive],
+    );
+
     useEffect(() => {
         setOpenMenus((prev) => {
             const newOpenMenus = new Set(prev);
@@ -166,7 +183,7 @@ export default function Sidebar({
                 section.items.forEach((item) => {
                     if (item.children?.length) {
                         const hasActiveChild = item.children.some((child) =>
-                            isItemActive(child),
+                            hasActiveDescendant(child),
                         );
 
                         if (hasActiveChild) {
@@ -178,7 +195,7 @@ export default function Sidebar({
 
             return Array.from(newOpenMenus);
         });
-    }, [normalizedCurrentPath, authorizedSections, isItemActive]);
+    }, [normalizedCurrentPath, authorizedSections, hasActiveDescendant]);
 
     useEffect(() => {
         if (!selectedItemId) {
@@ -218,6 +235,113 @@ export default function Sidebar({
             isActive && cn(theme.text, theme.activeSidebarBg),
         );
 
+    const renderMenuItem = (item: AdminMenuItem, depth = 0) => {
+        const hasChildren = Boolean(item.children?.length);
+        const hasActiveChild = hasChildren && item.children?.some(hasActiveDescendant);
+        const isOpen = openMenus.includes(item.id);
+        const isActive = hasChildren ? Boolean(hasActiveChild) : isLeafItemActive(item);
+
+        return (
+            <li key={item.id} className="space-y-1">
+                {hasChildren ? (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className={cn(
+                            baseItemClass,
+                            depth === 0 ? 'min-h-11 justify-between' : 'min-h-10 justify-between text-[14px]',
+                            depth > 0 && 'pl-3',
+                            itemColorClasses(isActive),
+                        )}
+                        onClick={() => toggleMenu(item.id)}
+                    >
+                        <span className="flex items-center gap-3 truncate">
+                            {item.icon && (
+                                <item.icon
+                                    className={cn(
+                                        depth === 0 ? 'h-5 w-5' : 'h-4 w-4',
+                                        'shrink-0 opacity-70',
+                                    )}
+                                    aria-hidden="true"
+                                />
+                            )}
+                            <span className="truncate">{item.title}</span>
+                        </span>
+                        <ChevronRightIcon
+                            className={cn(
+                                'h-4 w-4 shrink-0 text-gray-600 transition-transform dark:text-gray-400',
+                                isOpen ? 'rotate-90' : '',
+                            )}
+                            aria-hidden="true"
+                        />
+                    </Button>
+                ) : item.href ? (
+                    <Button
+                        variant="ghost"
+                        className={cn(
+                            baseItemClass,
+                            depth === 0 ? 'min-h-11' : 'min-h-10 text-[14px]',
+                            depth > 0 && 'pl-3',
+                            itemColorClasses(isActive),
+                        )}
+                        asChild
+                    >
+                        <Link
+                            href={item.href}
+                            onClick={() => {
+                                setSelectedItemId(item.id);
+                                closeSidebarAfterNavigation();
+                            }}
+                            className="flex w-full items-center"
+                        >
+                            {item.icon && (
+                                <item.icon
+                                    className={cn(
+                                        depth === 0 ? 'h-5 w-5' : 'h-4 w-4',
+                                        'shrink-0 opacity-70',
+                                    )}
+                                    aria-hidden="true"
+                                />
+                            )}
+                            <span className="truncate">{item.title}</span>
+                        </Link>
+                    </Button>
+                ) : (
+                    <div
+                        className={cn(
+                            baseItemClass,
+                            depth === 0 ? 'min-h-11' : 'min-h-10 text-[14px]',
+                            depth > 0 && 'pl-3',
+                            'text-gray-500 dark:text-gray-400',
+                        )}
+                    >
+                        {item.icon && (
+                            <item.icon
+                                className={cn(
+                                    depth === 0 ? 'h-5 w-5' : 'h-4 w-4',
+                                    'shrink-0 opacity-70',
+                                )}
+                                aria-hidden="true"
+                            />
+                        )}
+                        <span className="truncate">{item.title}</span>
+                    </div>
+                )}
+
+                {hasChildren && isOpen ? (
+                    <ul
+                        className={cn(
+                            'space-y-1 border-l border-gray-300 dark:border-gray-700',
+                            depth === 0 ? 'ml-3 pl-3' : 'ml-3 pl-3',
+                        )}
+                    >
+                        {item.children?.map((childItem) => renderMenuItem(childItem, depth + 1))}
+                    </ul>
+                ) : null}
+            </li>
+        );
+    };
+
     const baseItemClass =
         'relative h-auto w-full rounded-lg px-3 py-2 text-left font-medium hover:bg-gray-200 flex items-center justify-start gap-3';
     const sidebarClass =
@@ -246,174 +370,9 @@ export default function Sidebar({
                             </div>
 
                             <ul className="space-y-1">
-                                {section.items.map((item) => {
-                                    const hasChildren = Boolean(
-                                        item.children?.length,
-                                    );
-                                    const hasActiveChild =
-                                        hasChildren &&
-                                        item.children?.some(isItemActive);
-                                    const isOpen = openMenus.includes(item.id);
-                                    const isActive = hasChildren
-                                        ? Boolean(hasActiveChild)
-                                        : isLeafItemActive(item);
-
-                                    return (
-                                        <li key={item.id} className="space-y-1">
-                                            {hasChildren ? (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className={cn(
-                                                        baseItemClass,
-                                                        'min-h-11 justify-between',
-                                                        itemColorClasses(
-                                                            isActive,
-                                                        ),
-                                                    )}
-                                                    onClick={() =>
-                                                        toggleMenu(item.id)
-                                                    }
-                                                >
-                                                    <span className="flex items-center gap-3 truncate">
-                                                        {item.icon && (
-                                                            <item.icon
-                                                                className="h-5 w-5 shrink-0 opacity-70"
-                                                                aria-hidden="true"
-                                                            />
-                                                        )}
-                                                        <span className="truncate">
-                                                            {item.title}
-                                                        </span>
-                                                    </span>
-                                                    <ChevronRightIcon
-                                                        className={cn(
-                                                            'h-4 w-4 shrink-0 text-gray-600 transition-transform dark:text-gray-400',
-                                                            isOpen
-                                                                ? 'rotate-90'
-                                                                : '',
-                                                        )}
-                                                        aria-hidden="true"
-                                                    />
-                                                </Button>
-                                            ) : item.href ? (
-                                                <Button
-                                                    variant="ghost"
-                                                    className={cn(
-                                                        baseItemClass,
-                                                        'min-h-11',
-                                                        itemColorClasses(
-                                                            isActive,
-                                                        ),
-                                                    )}
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={item.href}
-                                                        onClick={() => {
-                                                            setSelectedItemId(
-                                                                item.id,
-                                                            );
-                                                            closeSidebarAfterNavigation();
-                                                        }}
-                                                        className="flex w-full items-center"
-                                                    >
-                                                        {item.icon && (
-                                                            <item.icon
-                                                                className="h-5 w-5 shrink-0 opacity-70"
-                                                                aria-hidden="true"
-                                                            />
-                                                        )}
-                                                        <span className="truncate">
-                                                            {item.title}
-                                                        </span>
-                                                    </Link>
-                                                </Button>
-                                            ) : (
-                                                <div
-                                                    className={cn(
-                                                        baseItemClass,
-                                                        'min-h-11 text-gray-500 dark:text-gray-400',
-                                                    )}
-                                                >
-                                                    {item.icon && (
-                                                        <item.icon
-                                                            className="h-5 w-5 shrink-0 opacity-70"
-                                                            aria-hidden="true"
-                                                        />
-                                                    )}
-                                                    <span className="truncate">
-                                                        {item.title}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {hasChildren && isOpen ? (
-                                                <ul className="ml-3 space-y-1 border-l border-gray-300 pl-3 dark:border-gray-700">
-                                                    {item.children?.map(
-                                                        (childItem) => {
-                                                            if (
-                                                                !childItem.href
-                                                            ) {
-                                                                return null;
-                                                            }
-
-                                                            const childIsActive =
-                                                                isItemActive(
-                                                                    childItem,
-                                                                );
-
-                                                            return (
-                                                                <li
-                                                                    key={
-                                                                        childItem.id
-                                                                    }
-                                                                >
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        className={cn(
-                                                                            baseItemClass,
-                                                                            'min-h-10 text-[14px]',
-                                                                            itemColorClasses(
-                                                                                childIsActive,
-                                                                            ),
-                                                                        )}
-                                                                        asChild
-                                                                    >
-                                                                        <Link
-                                                                            href={
-                                                                                childItem.href
-                                                                            }
-                                                                            onClick={() => {
-                                                                                setSelectedItemId(
-                                                                                    childItem.id,
-                                                                                );
-                                                                                closeSidebarAfterNavigation();
-                                                                            }}
-                                                                            className="flex w-full items-center justify-start"
-                                                                        >
-                                                                            {childItem.icon && (
-                                                                                <childItem.icon
-                                                                                    className="h-4 w-4 shrink-0 opacity-70"
-                                                                                    aria-hidden="true"
-                                                                                />
-                                                                            )}
-                                                                            <span className="truncate">
-                                                                                {
-                                                                                    childItem.title
-                                                                                }
-                                                                            </span>
-                                                                        </Link>
-                                                                    </Button>
-                                                                </li>
-                                                            );
-                                                        },
-                                                    )}
-                                                </ul>
-                                            ) : null}
-                                        </li>
-                                    );
-                                })}
+                                {section.items.map((item) =>
+                                    renderMenuItem(item),
+                                )}
                             </ul>
 
                             {section.footerAction?.href && (

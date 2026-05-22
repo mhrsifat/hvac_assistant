@@ -1,0 +1,86 @@
+name: Deploy to maboydem.thesyndicates.team
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your repo
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # 2. Set up PHP
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql, dom, fileinfo, tokenizer, xml, curl
+          coverage: none
+
+      # 3. Cache and install Composer dependencies
+      - name: Setup Composer cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install PHP dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+      # 4. Setup Node.js and cache npm
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+      # 5. Install JS dependencies & build frontend
+      - name: Install Node dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      # 6. Prepare optimized framework caches
+      - name: Artisan optimize
+        env:
+          APP_ENV: production
+        run: |
+          php artisan config:cache || true
+          php artisan route:cache || true
+          php artisan view:cache || true
+
+      # 7. Deploy via FTP
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: /
+          git-ftp-args: --insecure
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/node_modules/**
+            vendor/**
+            storage/**
+            tests/**
+            phpunit.xml
+            README.md
+            .env
+            .env.example
+            .github/**
+            resources/js/pages/**/__tests__/**

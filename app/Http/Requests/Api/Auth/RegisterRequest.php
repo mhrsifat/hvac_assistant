@@ -18,7 +18,7 @@ class RegisterRequest extends BaseRequest
             'last_name' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|max:300|confirmed',
-            'phone' => 'required|string|min:5|max:20|unique:users,phone',
+            'phone' => 'nullable|string|min:5|max:20|unique:users,phone',
             'terms_and_conditions' => 'nullable|boolean',
             'role' => 'nullable|string|in:user,seller,admin',
         ];

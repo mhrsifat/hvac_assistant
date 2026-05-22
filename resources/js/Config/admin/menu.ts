@@ -4,10 +4,10 @@ import {
     ClockIcon,
     CloudIcon,
     Cog6ToothIcon,
+    EnvelopeIcon,
     GlobeAltIcon,
     HeartIcon,
     HomeIcon,
-    KeyIcon,
     LifebuoyIcon,
     ServerIcon,
     ShieldCheckIcon,
@@ -18,13 +18,11 @@ import {
     WrenchIcon,
 } from '@heroicons/react/24/outline';
 import type { InertiaLinkProps } from '@inertiajs/react';
-import { FileText, Palette, Scale } from 'lucide-react';
+import { FileText, Scale } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
+import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
-import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
-// import { show as showTwoFactor } from '@/routes/two-factor';
-import { edit as editPassword } from '@/routes/user-password';
 
 type AdminMenuHref = NonNullable<InertiaLinkProps['href']>;
 
@@ -35,6 +33,7 @@ export type AdminMenuItem = {
     icon?: ComponentType<SVGProps<SVGSVGElement>>;
     permissions?: string[];
     roles?: string[];
+    relatedRoutes?: string[];
     children?: AdminMenuItem[];
     helperLabel?: string;
 };
@@ -179,42 +178,74 @@ export const adminMenuSections: AdminMenuSection[] = [
             {
                 id: 'settings',
                 title: 'Settings',
-                href: editProfile(),
+                href: null,
                 icon: Cog6ToothIcon,
                 permissions: ['manage settings'],
                 roles: ['super-admin', 'admin'],
                 children: [
                     {
-                        id: 'settings-profile',
-                        title: 'Profile',
-                        href: editProfile(),
+                        id: 'account-settings',
+                        title: 'Account settings',
+                        href: '/settings/account',
+                        relatedRoutes: [
+                            toUrl(editProfile()),
+                            '/settings/password',
+                            '/settings/appearance',
+                            '/settings/account',
+                        ],
                         icon: UserIcon,
-                        permissions: [],
+                        permissions: ['manage settings'],
                         roles: ['super-admin', 'admin'],
+                        // children: [
+                        //     {
+                        //         id: 'account-settings-profile',
+                        //         title: 'Profile',
+                        //         href: editProfile(),
+                        //         icon: UserIcon,
+                        //         permissions: [],
+                        //         roles: ['super-admin', 'admin'],
+                        //     },
+                        //     {
+                        //         id: 'account-settings-password',
+                        //         title: 'Password',
+                        //         href: editPassword(),
+                        //         icon: KeyIcon,
+                        //         permissions: [],
+                        //         roles: ['super-admin', 'admin'],
+                        //     },
+                        //     {
+                        //         id: 'account-settings-appearance',
+                        //         title: 'Appearance',
+                        //         href: editAppearance(),
+                        //         icon: Palette,
+                        //         permissions: [],
+                        //         roles: ['super-admin', 'admin'],
+                        //     },
+                        // ],
                     },
                     {
-                        id: 'settings-password',
-                        title: 'Password',
-                        href: editPassword(),
-                        icon: KeyIcon,
-                        permissions: [],
+                        id: 'integration-settings',
+                        title: 'Integration settings',
+                        href: null,
+                        icon: EnvelopeIcon,
+                        permissions: ['manage settings'],
                         roles: ['super-admin', 'admin'],
-                    },
-                    // {
-                    //     id: 'settings-two-factor',
-                    //     title: 'Two-factor authentication',
-                    //     href: showTwoFactor(),
-                    //     icon: ChatBubbleLeftRightIcon,
-                    //     permissions: [],
-                    //     roles: ['super-admin', 'admin'],
-                    // },
-                    {
-                        id: 'settings-appearance',
-                        title: 'Appearance',
-                        href: editAppearance(),
-                        icon: Palette,
-                        permissions: [],
-                        roles: ['super-admin', 'admin'],
+                        children: [
+                            {
+                                id: 'integration-settings-smtp',
+                                title: 'SMTP settings',
+                                href: '/settings/integration/smtp',
+                                permissions: ['manage settings'],
+                                roles: ['super-admin', 'admin'],
+                            },
+                            {
+                                id: 'integration-settings-ai',
+                                title: 'AI settings',
+                                href: '/settings/integration/ai',
+                                permissions: ['manage settings'],
+                                roles: ['super-admin', 'admin'],
+                            },
+                        ],
                     },
                     {
                         id: 'settings-system-branding',

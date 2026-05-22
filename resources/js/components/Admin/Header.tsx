@@ -257,7 +257,7 @@ export default function Header({
                                 asChild
                                 className="mt-3 bg-[#1a73e8] text-white hover:bg-blue-700 dark:bg-[#8ab4f8] dark:text-gray-900 dark:hover:bg-blue-300"
                             >
-                                <Link href={editProfile()}>Manage Account</Link>
+                                <Link href='/settings/account'>Manage Account</Link>
                             </Button>
                         </div>
                     </div>

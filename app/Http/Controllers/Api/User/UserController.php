@@ -6,9 +6,7 @@ use App\Concerns\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\User\ChangePasswordRequest;
 use App\Http\Requests\Api\User\UpdateProfileRequest;
-use App\Http\Resources\Api\User\SellerResource;
 use App\Http\Resources\Api\User\UserResource;
-use App\Services\Api\User\SellerService;
 use App\Services\Api\User\UserService;
 use Exception;
 use Illuminate\Support\Facades\Hash;
@@ -20,12 +18,9 @@ class UserController extends Controller
 
     private UserService $userService;
 
-    private SellerService $sellerService;
-
-    public function __construct(UserService $userService, SellerService $sellerService)
+    public function __construct(UserService $userService)
     {
         $this->userService = $userService;
-        $this->sellerService = $sellerService;
     }
 
     /**
@@ -52,16 +47,8 @@ class UserController extends Controller
                 $request->file('avatar'),
                 $request->file('cover_photo')
             );
-
-            if ($user->hasRole(['admin', 'super-admin'])) {
-                $returnData = [
-                    'admin' => new UserResource($updatedUser),
-                ];
-            } elseif ($user->hasRole('seller')) {
-                $returnData = ['seller' => new SellerResource($updatedUser)];
-            } else {
+            
                 $returnData = ['user' => new UserResource($updatedUser)];
-            }
 
             return $this->success(200, 'Profile updated successfully.', $returnData);
         } catch (Exception $e) {

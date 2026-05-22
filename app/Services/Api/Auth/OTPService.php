@@ -14,7 +14,7 @@ class OTPService
 {
     public function createOtpForUser(User $user, string $type): string
     {
-        $otpLength = config('auth.otp_length', 4);
+        $otpLength = config('auth.otp_length', 6);
         $otpExpiry = config('auth.otp_expires_in', 5);
 
         // Security Update: Random OTP in production, static in local
@@ -22,7 +22,7 @@ class OTPService
             $otp = str_pad((string) random_int(0, pow(10, $otpLength) - 1), $otpLength, '0', STR_PAD_LEFT);
         } else {
             $otp = str_repeat('1', $otpLength); // e.g., '1111'
-            $otp = 1234;
+            $otp = 123456;
         }
 
         $otpToken = bin2hex(random_bytes(32));
@@ -58,7 +58,7 @@ class OTPService
             ->first();
 
         if (! $otpRecord || ! hash_equals($otpRecord->otp, $otp)) {
-            throw new Exception('Invalid OTP token or code.');
+            throw new Exception('Invalid OTP Provided.');
         }
 
         if (Carbon::parse($otpRecord->expires_at)->isPast()) {
@@ -68,6 +68,8 @@ class OTPService
         DB::table('otps')
             ->where('id', $otpRecord->id)
             ->update(['used' => true]);
+
+        // email_verified_at in users table
 
         if ($type === 'registration') {
 
@@ -88,6 +90,11 @@ class OTPService
                 $resetToken,
                 now()->addMinutes(config('auth.password_reset.expire', 60))
             );
+
+            if (is_null($user->email_verified_at)) {
+                $user->email_verified_at = now();
+                $user->save();
+            }
 
             return $resetToken;
         }
