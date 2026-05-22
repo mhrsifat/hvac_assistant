@@ -77,8 +77,12 @@ jobs:
             **/node_modules/**
             vendor/**
             storage/**/logs/**
-            storage/**/framework/**
-            storage/**/app/**
+            storage/**/framework/cache/**
+            storage/**/framework/sessions/**
+            storage/**/framework/testing/**
+            storage/**/framework/views/**
+            storage/**/app/public/**
+            storage/**/app/private/**
             tests/**
             phpunit.xml
             README.md
