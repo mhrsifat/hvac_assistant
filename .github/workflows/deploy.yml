@@ -76,13 +76,13 @@ jobs:
             **/.github/**
             **/node_modules/**
             vendor/**
-            storage/**/logs/**
-            storage/**/framework/cache/**
-            storage/**/framework/sessions/**
-            storage/**/framework/testing/**
-            storage/**/framework/views/**
-            storage/**/app/public/**
-            storage/**/app/private/**
+            storage/logs/**
+            storage/framework/cache/**
+            storage/framework/sessions/**
+            storage/framework/testing/**
+            storage/framework/views/**
+            storage/app/public/**
+            storage/app/private/**
             tests/**
             phpunit.xml
             README.md
