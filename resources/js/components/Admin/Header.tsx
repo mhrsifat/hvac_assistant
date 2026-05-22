@@ -14,7 +14,6 @@ import {
     flattenAdminMenuSectionsForSearch,
 } from '@/Config/admin/menu';
 import { logout } from '@/routes';
-import { edit as editProfile } from '@/routes/profile';
 
 type HeaderProps = {
     isMiniSidebar: boolean;

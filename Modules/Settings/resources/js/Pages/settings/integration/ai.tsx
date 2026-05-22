@@ -1,12 +1,12 @@
-import { Transition } from '@headlessui/react';
-import { Form, Head } from '@inertiajs/react';
-import { CheckCircle2, Sparkles } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminSettingsLayout from '@/layouts/settings/admin-settings-layout';
+import { Transition } from '@headlessui/react';
+import { Form, Head } from '@inertiajs/react';
+import { CheckCircle2, Sparkles } from 'lucide-react';
 
 type OpenAiSettings = {
   configured: boolean;

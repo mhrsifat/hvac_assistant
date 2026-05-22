@@ -2,7 +2,7 @@ import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Link } from '@inertiajs/react';
 import { GlobeIcon, User } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -59,15 +59,16 @@ const normalizePath = (value: string): string => {
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { currentUrl } = useCurrentUrl();
-    const [openSections, setOpenSections] = useState<string[]>([]);
+    
+    // Track manually toggled sections using a dictionary (Record)
+    const [userToggledSections, setUserToggledSections] = useState<Record<string, boolean>>({});
 
-    if (typeof window === 'undefined') {
-        return null;
-    }
+    const locationPath =
+        currentUrl ?? (typeof window !== 'undefined' ? window.location.pathname : '/');
 
-    const currentPath = normalizePath(currentUrl || window.location.pathname);
+    const currentPath = normalizePath(locationPath);
 
-    const isLeafItemActive = (item: SettingsNavItem): boolean => {
+    const isLeafItemActive = useCallback((item: SettingsNavItem): boolean => {
         if (
             item.relatedRoutes?.some(
                 (route) => normalizePath(toUrl(route)) === currentPath,
@@ -81,48 +82,41 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         }
 
         return normalizePath(toUrl(item.href)) === currentPath;
-    };
-
-    const hasActiveDescendant = (item: SettingsNavItem): boolean => {
-        if (isLeafItemActive(item)) {
-            return true;
-        }
-
-        return Boolean(
-            item.children?.some((childItem) => hasActiveDescendant(childItem)),
-        );
-    };
-
-    useEffect(() => {
-        setOpenSections((previousOpenSections) => {
-            const nextOpenSections = new Set(previousOpenSections);
-
-            sidebarNavItems.forEach((item) => {
-                if (item.children?.length && hasActiveDescendant(item)) {
-                    nextOpenSections.add(item.title);
-                }
-            });
-
-            return Array.from(nextOpenSections);
-        });
     }, [currentPath]);
 
-    const toggleSection = (title: string): void => {
-        setOpenSections((previousOpenSections) => {
-            if (previousOpenSections.includes(title)) {
-                return previousOpenSections.filter(
-                    (sectionTitle) => sectionTitle !== title,
-                );
+    const hasActiveDescendant = useCallback((item: SettingsNavItem): boolean => {
+        const recurse = (node: SettingsNavItem): boolean => {
+            if (isLeafItemActive(node)) {
+                return true;
             }
 
-            return [...previousOpenSections, title];
+            return Boolean(
+                node.children?.some((childItem) => recurse(childItem)),
+            );
+        };
+
+        return recurse(item);
+    }, [isLeafItemActive]);
+
+    const toggleSection = (title: string, isActive: boolean): void => {
+        setUserToggledSections((prev) => {
+            // Determine if the section is currently open. 
+            // If the user hasn't toggled it yet (undefined), fallback to its active state.
+            const isCurrentlyOpen = prev[title] ?? isActive;
+            
+            return {
+                ...prev,
+                [title]: !isCurrentlyOpen,
+            };
         });
     };
 
     const renderNavItem = (item: SettingsNavItem, depth = 0) => {
         const hasChildren = Boolean(item.children?.length);
         const isActive = hasChildren ? hasActiveDescendant(item) : isLeafItemActive(item);
-        const isOpen = hasChildren && (openSections.includes(item.title) || isActive);
+        
+        // Determine the open state directly during render
+        const isOpen = hasChildren ? (userToggledSections[item.title] ?? isActive) : false;
 
         return (
             <div key={`${item.title}-${depth}`} className="space-y-1">
@@ -130,7 +124,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     <Button
                         type="button"
                         variant="ghost"
-                        onClick={() => toggleSection(item.title)}
+                        onClick={() => toggleSection(item.title, isActive)}
                         className={cn(
                             'w-full justify-between gap-3 rounded-lg px-4 h-10 font-medium text-muted-foreground hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-50',
                             isActive &&

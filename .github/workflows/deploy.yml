@@ -65,9 +65,9 @@ jobs:
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          server: ftp.thesyndicates.team
+          username: maboydem@thesyndicates.team
+          password: maboydemmaboydem
           local-dir: ./
           server-dir: /
           git-ftp-args: --insecure
