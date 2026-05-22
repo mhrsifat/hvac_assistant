@@ -1,0 +1,11 @@
+{
+    "name": "Vector",
+    "alias": "vector",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Vector\\Providers\\VectorServiceProvider"
+    ],
+    "files": []
+}

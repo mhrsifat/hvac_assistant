@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/vector",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Vector\\": "app/",
+            "Modules\\Vector\\Database\\Factories\\": "database/factories/",
+            "Modules\\Vector\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Vector\\Tests\\": "tests/"
+        }
+    }
+}

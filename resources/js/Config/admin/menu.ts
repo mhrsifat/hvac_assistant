@@ -159,9 +159,9 @@ export const adminMenuSections: AdminMenuSection[] = [
         ],
     },
     {
-        id: 'products',
-        title: 'Products',
-        description: 'Favorite products appear here',
+        id: 'administration',
+        title: 'Administration',
+        description: 'Manage settings, policies, and system configuration',
         items: [
             {
                 id: 'privacy-policy',

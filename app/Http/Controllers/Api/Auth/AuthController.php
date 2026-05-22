@@ -61,7 +61,7 @@ class AuthController extends Controller
     {
         try {
             $data = $request->validated();
-            $otpVerification = config('auth.verification.enabled', true);
+            $otpVerification = (bool) config('auth.verification.enabled', true);
 
             $result = $this->registerService->register($data, $otpVerification);
 
@@ -77,7 +77,7 @@ class AuthController extends Controller
                 $returnData['expires_in'] = $result['expires_in'];
             }
 
-            return $this->success(201, 'User registered successfully.', $returnData);
+            return $this->success(201, 'A mail has been sent to your email address. Please verify your email.', $returnData);
         } catch (Exception $e) {
             return $this->error(500, $e->getMessage());
         }

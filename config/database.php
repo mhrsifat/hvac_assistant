@@ -114,6 +114,20 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        // Secondary Database (PostgreSQL with pgvector)
+        'pgsql_vector' => [
+            'driver' => 'pgsql',
+            'host' => env('VECTOR_DB_HOST', '127.0.0.1'),
+            'port' => env('VECTOR_DB_PORT', '5432'),
+            'database' => env('VECTOR_DB_DATABASE', 'hvac_vector_db'),
+            'username' => env('VECTOR_DB_USERNAME', 'hvac_user'),
+            'password' => env('VECTOR_DB_PASSWORD', 'hvac_password'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+        ],
+
     ],
 
     /*
@@ -149,7 +163,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
