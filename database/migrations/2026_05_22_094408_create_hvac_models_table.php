@@ -19,13 +19,23 @@ return new class extends Migration
             $table->string('efficiency_rating')->nullable();
             $table->string('power_spec')->nullable();
             $table->string('refrigerant_type')->nullable();
-            $table->string('image_url')->nullable();
+            $table->string('image_path')->nullable();
             $table->timestamps();
+        });
+
+        Schema::table('error_codes', function (Blueprint $table) {
+            $table->foreign('hvac_model_id')->references('id')->on('hvac_models')->cascadeOnDelete();
         });
     }
 
     public function down(): void
     {
+        if (Schema::hasTable('error_codes')) {
+            Schema::table('error_codes', function (Blueprint $table) {
+                $table->dropForeign(['hvac_model_id']);
+            });
+        }
+
         Schema::dropIfExists('hvac_models');
     }
 };

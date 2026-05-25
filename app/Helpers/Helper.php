@@ -11,9 +11,9 @@ use Illuminate\Support\Str;
 class Helper
 {
     /**
-     * Upload an image and return its URL.
+     * Upload a file and return its path.
      *
-     * @param  UploadedFile  $image
+     * @param  UploadedFile  $file
      * @param  string  $directory
      */
     public static function uploadFile($file, $directory, $prefix = 'file'): string

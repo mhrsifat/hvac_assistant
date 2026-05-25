@@ -12,11 +12,11 @@ return new class extends Migration
     {
         Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('chat_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('chat_id')->index();
             $table->foreignId('sender_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('sender_role');
             $table->text('content');
-            $table->string('attachment_path')->nullable();
+            $table->json('attachments')->nullable();
             $table->timestamps();
         });
     }

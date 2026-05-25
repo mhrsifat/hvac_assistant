@@ -12,7 +12,8 @@ return new class extends Migration
     {
         Schema::create('error_codes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('hvac_model_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('brand_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('hvac_model_id')->nullable()->index();
             $table->string('code')->index();
             $table->text('description');
             $table->text('resolution_steps');

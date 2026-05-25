@@ -11,8 +11,12 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified', 'role:admin|super-admin'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
-    Route::inertia('chat-broadcast-tester', 'tools/chat-broadcast-tester')->name('chat.broadcast-tester');
+    // Route::inertia('chat-broadcast-tester', 'tools/chat-broadcast-tester')->name('chat.broadcast-tester');
 });
 
-require __DIR__ . '/Web/settings.php';
-require __DIR__ . '/Web/auth.php';
+require __DIR__.'/Web/settings.php';
+require __DIR__.'/Web/auth.php';
+
+require __DIR__.'/Web/brands.php';
+require __DIR__.'/Web/hvac_models.php';
+require __DIR__.'/Web/chats.php';

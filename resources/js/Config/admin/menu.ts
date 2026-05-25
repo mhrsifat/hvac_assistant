@@ -1,16 +1,8 @@
 import {
-    AdjustmentsHorizontalIcon,
-    ChartBarIcon,
     ClockIcon,
-    CloudIcon,
     Cog6ToothIcon,
     EnvelopeIcon,
     GlobeAltIcon,
-    HeartIcon,
-    HomeIcon,
-    LifebuoyIcon,
-    ServerIcon,
-    ShieldCheckIcon,
     SquaresPlusIcon,
     UserIcon,
     UsersIcon,
@@ -22,7 +14,9 @@ import { FileText, Scale } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
 import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
+import * as account from '@/routes/account';
 import { edit as editProfile } from '@/routes/profile';
+import staticPages from '@/routes/static-pages';
 
 type AdminMenuHref = NonNullable<InertiaLinkProps['href']>;
 
@@ -72,88 +66,26 @@ export type AdminSearchItem = {
 
 export const adminMenuSections: AdminMenuSection[] = [
     {
-        id: 'cloud-hub',
-        title: 'Cloud hub',
-        items: [
+        id: 'hvac-assistant',
+        title: 'Hvac Assistant',
+        description: 'Manage brands, models, and chats',
+        items: [            
             {
-                id: 'cloud-hub-root',
-                title: 'Cloud Hub',
-                href: dashboard(),
-                icon: CloudIcon,
-                children: [
-                    {
-                        id: 'cloud-hub-home',
-                        title: 'Home',
-                        href: dashboard(),
-                        icon: HomeIcon,
-                    },
-                    {
-                        id: 'cloud-hub-deployments',
-                        title: 'Deployments',
-                        href: dashboard(),
-                        icon: ServerIcon,
-                    },
-                    {
-                        id: 'cloud-hub-health',
-                        title: 'Health & troubleshooting',
-                        href: dashboard(),
-                        icon: HeartIcon,
-                    },
-                    {
-                        id: 'cloud-hub-security',
-                        title: 'Security & compliance',
-                        href: dashboard(),
-                        icon: ShieldCheckIcon,
-                    },
-                    {
-                        id: 'cloud-hub-optimization',
-                        title: 'Optimization',
-                        href: dashboard(),
-                        icon: AdjustmentsHorizontalIcon,
-                    },
-                    {
-                        id: 'cloud-hub-quotas',
-                        title: 'Quotas & reservations',
-                        href: dashboard(),
-                        icon: ChartBarIcon,
-                    },
-                    {
-                        id: 'cloud-hub-maintenance',
-                        title: 'Maintenance',
-                        href: dashboard(),
-                        icon: WrenchIcon,
-                    },
-                    {
-                        id: 'cloud-hub-support',
-                        title: 'Support',
-                        href: dashboard(),
-                        icon: LifebuoyIcon,
-                    },
-                    {
-                        id: 'cloud-hub-topology',
-                        title: 'App Topology',
-                        href: dashboard(),
-                        icon: GlobeAltIcon,
-                        helperLabel: 'Preview',
-                    },
-                ],
-            },
-            {
-                id: 'cloud-overview',
-                title: 'Cloud overview',
-                href: dashboard(),
+                id: 'brands',
+                title: 'Brands',
+                href: '/brands',
                 icon: WindowIcon,
             },
             {
-                id: 'solutions',
-                title: 'Solutions',
-                href: dashboard(),
+                id: 'models',
+                title: 'Models',
+                href: '/hvac-models',
                 icon: SquaresPlusIcon,
             },
             {
-                id: 'recently-visited',
-                title: 'Recently visited',
-                href: dashboard(),
+                id: 'chats',
+                title: 'Chats',
+                href: '/chats',
                 icon: ClockIcon,
             },
         ],
@@ -166,13 +98,13 @@ export const adminMenuSections: AdminMenuSection[] = [
             {
                 id: 'privacy-policy',
                 title: 'Privacy Policy',
-                href: '/settings/privacy-policy',
+                href: staticPages.privacyPolicy.edit(),
                 icon: FileText,
             },
             {
                 id: 'terms-and-conditions',
                 title: 'Terms and Conditions',
-                href: '/settings/terms-and-conditions',
+                href: staticPages.termsAndConditions.edit(),
                 icon: Scale,
             },
             {
@@ -186,7 +118,7 @@ export const adminMenuSections: AdminMenuSection[] = [
                     {
                         id: 'account-settings',
                         title: 'Account settings',
-                        href: '/settings/account',
+                        href: account.edit(),
                         relatedRoutes: [
                             toUrl(editProfile()),
                             '/settings/password',

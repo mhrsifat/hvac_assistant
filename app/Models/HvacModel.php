@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class HvacModel extends Model
 {
@@ -21,8 +22,20 @@ class HvacModel extends Model
         'efficiency_rating',
         'power_spec',
         'refrigerant_type',
-        'image_url',
+        'image_path',
     ];
+
+    // image_path accessor to return full URL
+    public function getImagePathAttribute(?string $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_URL)
+            ? $value
+            : Storage::url($value);
+    }
 
     protected function casts(): array
     {

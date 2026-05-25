@@ -16,11 +16,12 @@ Use the real database columns exactly as they exist in the migrations. Do not gu
 - `efficiency_rating`: efficiency label or rating string.
 - `power_spec`: power specification text.
 - `refrigerant_type`: refrigerant used by the unit.
-- `image_url`: public image URL for the HVAC model.
+- `image_path`: stored path for the HVAC model image.
 
 ## error_codes
 
-- `hvac_model_id`: optional link to a specific HVAC model.
+- `brand_id`: Optional reference to a brand. When set, the error code applies to all HVAC models belonging to that brand.
+- `hvac_model_id`: Optional reference to a specific HVAC model. When set, the error code applies only to that model.
 - `code`: error code such as E03.
 - `description`: what the code means.
 - `resolution_steps`: troubleshooting and repair steps.
@@ -38,7 +39,7 @@ Use the real database columns exactly as they exist in the migrations. Do not gu
 - `sender_id`: user who sent the message when the sender is a person; null for assistant or system messages.
 - `sender_role`: message origin such as user, assistant, or system.
 - `content`: message body.
-- `attachment_path`: stored file path for an uploaded image or document.
+- `attachments`: JSON array of stored paths or URLs for uploaded files.
 
 ## repair_reports
 

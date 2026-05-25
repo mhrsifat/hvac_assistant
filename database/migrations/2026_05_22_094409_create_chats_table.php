@@ -18,10 +18,20 @@ return new class extends Migration
             $table->string('status')->default('active');
             $table->timestamps();
         });
+
+        Schema::table('chat_messages', function (Blueprint $table) {
+            $table->foreign('chat_id')->references('id')->on('chats')->cascadeOnDelete();
+        });
     }
 
     public function down(): void
     {
+        if (Schema::hasTable('chat_messages')) {
+            Schema::table('chat_messages', function (Blueprint $table) {
+                $table->dropForeign(['chat_id']);
+            });
+        }
+
         Schema::dropIfExists('chats');
     }
 };

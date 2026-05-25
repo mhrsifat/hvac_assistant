@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class ChatMessage extends Model
 {
@@ -17,8 +18,32 @@ class ChatMessage extends Model
         'sender_id',
         'sender_role',
         'content',
-        'attachment_path',
+        'attachments',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'attachments' => 'array',
+        ];
+    }
+
+    // accesor to return attachments as full URLs
+    public function getAttachmentsAttribute(?string $value): ?array
+    {
+        if (blank($value)) {
+            return null;
+        }
+        $attachments = json_decode($value, true);
+
+        foreach ($attachments as $key => $attachment) {
+            $attachments[$key] = filter_var($attachment, FILTER_VALIDATE_URL)
+                ? $attachment
+                : Storage::url($attachment);
+        }
+
+        return $attachments;
+    }
 
     public function chat(): BelongsTo
     {
