@@ -1,7 +1,8 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Deferred, Head, router, useForm, usePage } from '@inertiajs/react';
+import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Eye } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 type BrandOption = {
@@ -275,15 +276,32 @@ export default function HvacModelsIndex() {
                                                 {model.capacity_btu ?? '-'}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <Button
-                                                    type="button"
-                                                    variant="destructive"
-                                                    onClick={() =>
-                                                        deleteModel(model.id)
-                                                    }
-                                                >
-                                                    Delete
-                                                </Button>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
+                                                    >
+                                                        <Link
+                                                            href={`/hvac-models/${model.id}`}
+                                                            prefetch
+                                                            className="gap-2"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                            View
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            deleteModel(model.id)
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

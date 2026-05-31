@@ -17,6 +17,6 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])->group(functio
 require __DIR__.'/Web/settings.php';
 require __DIR__.'/Web/auth.php';
 
-require __DIR__.'/Web/brands.php';
-require __DIR__.'/Web/hvac_models.php';
-require __DIR__.'/Web/chats.php';
+require __DIR__.'/Web/v1/brands.php';
+require __DIR__.'/Web/v1/hvac_models.php';
+require __DIR__.'/Web/v1/chats.php';

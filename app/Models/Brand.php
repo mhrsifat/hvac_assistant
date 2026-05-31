@@ -33,4 +33,14 @@ class Brand extends Model
     {
         return $this->hasMany(HvacModel::class);
     }
+
+    public function errorCodes(): HasMany
+    {
+        return $this->hasMany(ErrorCode::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(SupportDocument::class);
+    }
 }

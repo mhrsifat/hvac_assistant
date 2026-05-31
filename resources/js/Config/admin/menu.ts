@@ -66,6 +66,19 @@ export type AdminSearchItem = {
 
 export const adminMenuSections: AdminMenuSection[] = [
     {
+        id: 'dashboard',
+        title: 'Dashboard',
+        description: 'Manage brands, models, and chats',
+        items: [
+            {
+                id: 'dashboard',
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: Cog6ToothIcon,
+            },
+        ],
+    },
+    {
         id: 'hvac-assistant',
         title: 'Hvac Assistant',
         description: 'Manage brands, models, and chats',

@@ -1,18 +1,36 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Deferred, Head, router, useForm, usePage } from '@inertiajs/react';
-import { FormEvent, useState } from 'react';
+import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Eye, Plus, X } from 'lucide-react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 type Brand = {
     id: number;
     name: string;
     logo_path: string | null;
-    created_at: string;
+    hvac_models_count: number;
+    documents_count: number;
+    error_codes_count: number;
 };
 
 type PaginatedResponse<T> = {
     data: T[];
+    links?: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
 };
 
 type BrandsPageProps = {
@@ -28,7 +46,20 @@ type BrandsPageProps = {
 
 export default function BrandsIndex() {
     const { brands, filters, flash } = usePage<BrandsPageProps>().props;
+    const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
+    const [showError, setShowError] = useState(Boolean(flash?.error));
     const [search, setSearch] = useState(filters.search ?? '');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+    useEffect(() => {
+        setShowSuccess(Boolean(flash?.success));
+    }, [flash?.success]);
+
+    useEffect(() => {
+        setShowError(Boolean(flash?.error));
+    }, [flash?.error]);
+
     const createForm = useForm<{
         name: string;
         logo: File | null;
@@ -44,6 +75,11 @@ export default function BrandsIndex() {
             preserveScroll: true,
             onSuccess: () => {
                 createForm.reset();
+                // Manually clear the physical file input element
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                setIsCreateOpen(false);
             },
         });
     };
@@ -61,67 +97,157 @@ export default function BrandsIndex() {
         );
     };
 
-    const deleteBrand = (brandId: number): void => {
-        router.delete(`/brands/${brandId}`, {
-            preserveScroll: true,
-        });
-    };
 
     return (
         <AdminLayout title="Brands">
             <Head title="Brands" />
 
-            <div className="space-y-6">
-                <h1 className="text-2xl font-semibold">Brands</h1>
+            <div className="space-y-8">
+                <section className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm">
+                    <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-emerald-200/60 blur-3xl" />
+                    <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-sky-200/70 blur-3xl" />
+                    <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                                Catalog
+                            </p>
+                            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                                Brands
+                            </h1>
+                            <p className="max-w-xl text-sm text-slate-600">
+                                Curate brand profiles, shared documents, and error codes your team relies on.
+                            </p>
+                        </div>
+                        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="gap-2">
+                                    <Plus className="h-4 w-4" />
+                                    Create brand
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-lg">
+                                <DialogHeader>
+                                    <DialogTitle>Create a new brand</DialogTitle>
+                                    <DialogDescription>
+                                        Upload a logo and keep the brand catalog consistent for technicians.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={submitCreate} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-700">
+                                            Brand name
+                                        </label>
+                                        <Input
+                                            value={createForm.data.name}
+                                            onChange={(event) =>
+                                                createForm.setData(
+                                                    'name',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="Samsung, LG, Daikin"
+                                            className={
+                                                createForm.errors.name
+                                                    ? 'border-red-500'
+                                                    : ''
+                                            }
+                                        />
+                                        {createForm.errors.name && (
+                                            <span className="text-xs text-red-500">
+                                                {createForm.errors.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-700">
+                                            Brand logo
+                                        </label>
+                                        <Input
+                                            type="file"
+                                            accept="image/*"
+                                            ref={fileInputRef}
+                                            onChange={(event) =>
+                                                createForm.setData(
+                                                    'logo',
+                                                    event.target.files?.[0] ?? null,
+                                                )
+                                            }
+                                            className={
+                                                createForm.errors.logo
+                                                    ? 'border-red-500'
+                                                    : ''
+                                            }
+                                        />
+                                        {createForm.errors.logo && (
+                                            <span className="text-xs text-red-500">
+                                                {createForm.errors.logo}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            type="submit"
+                                            disabled={createForm.processing}
+                                        >
+                                            {createForm.processing
+                                                ? 'Creating...'
+                                                : 'Create brand'}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </section>
 
-                {flash?.success ? (
-                    <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                        {flash.success}
-                    </p>
+                {flash?.success && showSuccess ? (
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                        <span>{flash.success}</span>
+                        <button
+                            type="button"
+                            onClick={() => setShowSuccess(false)}
+                            className="rounded p-1 text-emerald-700/80 transition hover:text-emerald-900"
+                            aria-label="Dismiss success message"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
                 ) : null}
 
-                {flash?.error ? (
-                    <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                        {flash.error}
-                    </p>
+                {flash?.error && showError ? (
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        <span>{flash.error}</span>
+                        <button
+                            type="button"
+                            onClick={() => setShowError(false)}
+                            className="rounded p-1 text-red-700/80 transition hover:text-red-900"
+                            aria-label="Dismiss error message"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
                 ) : null}
 
-                <form
-                    onSubmit={submitCreate}
-                    className="grid gap-3 rounded-lg border bg-white p-4 dark:bg-zinc-900 md:grid-cols-[1fr_1fr_auto]"
-                >
-                    <Input
-                        value={createForm.data.name}
-                        onChange={(event) =>
-                            createForm.setData('name', event.target.value)
-                        }
-                        placeholder="Brand name"
-                    />
-                    <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) =>
-                            createForm.setData(
-                                'logo',
-                                event.target.files?.[0] ?? null,
-                            )
-                        }
-                    />
-                    <Button type="submit" disabled={createForm.processing}>
-                        {createForm.processing ? 'Creating...' : 'Create Brand'}
-                    </Button>
-                </form>
-
-                <form onSubmit={applySearch} className="flex gap-3">
-                    <Input
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Search brand..."
-                    />
-                    <Button type="submit" variant="outline">
-                        Search
-                    </Button>
-                </form>
+                <Card className="border-0 bg-white/90 shadow-sm">
+                    <CardHeader className="space-y-1">
+                        <CardTitle className="text-base">Brand search</CardTitle>
+                        <CardDescription>
+                            Quickly filter by brand name to find the right profile.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={applySearch} className="flex flex-col gap-3 sm:flex-row">
+                            <Input
+                                value={search}
+                                onChange={(event) => setSearch(event.target.value)}
+                                placeholder="Search brand..."
+                            />
+                            <Button type="submit" variant="outline" className="sm:w-auto">
+                                Search
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
 
                 <Deferred
                     data="brands"
@@ -134,22 +260,15 @@ export default function BrandsIndex() {
                     }
                 >
                     {() => (
-                        <div className="overflow-x-auto rounded-lg border bg-white dark:bg-zinc-900">
+                        <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
                             <table className="min-w-full text-sm">
-                                <thead className="border-b bg-gray-50 dark:bg-zinc-800">
+                                <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
                                     <tr>
-                                        <th className="px-4 py-3 text-left">
-                                            Logo
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            Name
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            Created
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            Action
-                                        </th>
+                                        <th className="px-4 py-4 text-left">Brand</th>
+                                        <th className="px-4 py-4 text-left">Models</th>
+                                        <th className="px-4 py-4 text-left">Documents</th>
+                                        <th className="px-4 py-4 text-left">Error codes</th>
+                                        <th className="px-4 py-4 text-left">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -158,37 +277,55 @@ export default function BrandsIndex() {
                                             key={brand.id}
                                             className="border-b last:border-b-0"
                                         >
-                                            <td className="px-4 py-3">
-                                                {brand.logo_path ? (
-                                                    <img
-                                                        src={brand.logo_path}
-                                                        alt={brand.name}
-                                                        className="h-10 w-10 rounded object-cover"
-                                                    />
-                                                ) : (
-                                                    <span className="text-xs text-gray-500">
-                                                        No logo
-                                                    </span>
-                                                )}
+                                            <td className="px-4 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    {brand.logo_path ? (
+                                                        <img
+                                                            src={brand.logo_path}
+                                                            alt={brand.name}
+                                                            className="h-11 w-11 rounded-lg object-cover ring-1 ring-slate-200"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-500">
+                                                            {brand.name.slice(0, 2).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-slate-900">
+                                                            {brand.name}
+                                                        </p>
+                                                        {/* <p className="text-xs text-slate-500">
+                                                            Brand profile and shared support assets
+                                                        </p> */}
+                                                    </div>
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-3">
-                                                {brand.name}
+                                            <td className="px-4 py-4 text-slate-600">
+                                                {brand.hvac_models_count}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                {new Date(
-                                                    brand.created_at,
-                                                ).toLocaleDateString()}
+                                            <td className="px-4 py-4 text-slate-600">
+                                                {brand.documents_count}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <Button
-                                                    type="button"
-                                                    variant="destructive"
-                                                    onClick={() =>
-                                                        deleteBrand(brand.id)
-                                                    }
-                                                >
-                                                    Delete
-                                                </Button>
+                                            <td className="px-4 py-4 text-slate-600">
+                                                {brand.error_codes_count}
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
+                                                    >
+                                                        <Link
+                                                            href={`/brands/${brand.id}`}
+                                                            prefetch
+                                                            className="gap-2"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                            View
+                                                        </Link>
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -196,9 +333,37 @@ export default function BrandsIndex() {
                             </table>
 
                             {brands?.data.length === 0 ? (
-                                <p className="p-4 text-sm text-gray-500">
+                                <p className="p-6 text-sm text-slate-500">
                                     No brands found.
                                 </p>
+                            ) : null}
+
+                            {brands?.links && brands.links.length > 0 ? (
+                                <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
+                                    {brands.links.map((link, index) =>
+                                        link.url ? (
+                                            <Link
+                                                key={`${link.label}-${index}`}
+                                                href={link.url}
+                                                className={`rounded-full border px-3 py-1 transition ${link.active
+                                                    ? 'border-slate-900 bg-slate-900 text-white'
+                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                                                    }`}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        ) : (
+                                            <span
+                                                key={`${link.label}-${index}`}
+                                                className="rounded-full border border-slate-200 px-3 py-1 text-slate-400"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        ),
+                                    )}
+                                </div>
                             ) : null}
                         </div>
                     )}

@@ -12,6 +12,11 @@ class BrandService
     public function paginateForIndex(?string $search = null): LengthAwarePaginator
     {
         return Brand::query()
+            ->withCount([
+                'hvacModels',
+                'documents as documents_count' => fn ($query) => $query->whereNull('hvac_model_id'),
+                'errorCodes as error_codes_count' => fn ($query) => $query->whereNull('hvac_model_id'),
+            ])
             ->when($search, function ($query, $searchTerm): void {
                 $query->where('name', 'like', "%{$searchTerm}%");
             })

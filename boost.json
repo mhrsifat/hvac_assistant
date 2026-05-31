@@ -1,9 +1,22 @@
 {
     "agents": [
-        "opencode"
+        "copilot"
     ],
     "cloud": false,
-    "mcp": true,
-    "nightwatch": false,
-    "sail": false
+    "packages": [
+        "spatie/laravel-permission"
+    ],
+    "skills": [
+        "ai-sdk-development",
+        "fortify-development",
+        "laravel-best-practices",
+        "socialite-development",
+        "wayfinder-development",
+        "pest-testing",
+        "inertia-react-development",
+        "tailwindcss-development",
+        "echo-react-development",
+        "echo-development",
+        "laravel-permission-development"
+    ]
 }

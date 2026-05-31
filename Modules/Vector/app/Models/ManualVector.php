@@ -16,4 +16,9 @@ class ManualVector extends Model
         'content',
         'embedding',
     ];
+
+    protected $casts = [
+        'content' => 'string',
+        'embedding' => 'array',
+    ];
 }

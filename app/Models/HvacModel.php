@@ -54,6 +54,11 @@ class HvacModel extends Model
         return $this->hasMany(ErrorCode::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(SupportDocument::class);
+    }
+
     public function chats(): HasMany
     {
         return $this->hasMany(Chat::class);
