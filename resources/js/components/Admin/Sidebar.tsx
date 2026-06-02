@@ -121,17 +121,29 @@ export default function Sidebar({
 
     const isLeafItemActive = useCallback(
         (item: AdminMenuItem): boolean => {
-            if (!item.href) {
+            const itemHref = item.href;
+
+            if (!itemHref) {
                 return false;
             }
 
+            // Enhanced relatedRoutes matching logic
             if (item.relatedRoutes && item.relatedRoutes.length > 0) {
-                return item.relatedRoutes.some((r) => normalizePath(toUrl(r)) === normalizedCurrentPath);
+                return item.relatedRoutes.some((routePattern) => {
+                    // Convert route pattern (e.g. /plans/:slug) to Regex
+                    const regexPattern = routePattern
+                        .replace(/:[^/]+/g, '[^/]+') // Convert :slug to regex match
+                        .replace(/\//g, '\\/'); // Escape forward slashes
+
+                    const regex = new RegExp(`^${regexPattern}$`);
+
+                    return regex.test(normalizedCurrentPath) || normalizedCurrentPath.startsWith(normalizePath(toUrl(itemHref)));
+                });
             }
 
-            const itemPath = normalizePath(toUrl(item.href));
+            const itemPath = normalizePath(toUrl(itemHref));
             const isCurrentPath = isCurrentUrl(
-                item.href,
+                itemHref,
                 normalizedCurrentPath,
             );
 

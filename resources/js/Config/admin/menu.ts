@@ -1,4 +1,5 @@
 import {
+    BanknotesIcon,
     ClockIcon,
     Cog6ToothIcon,
     EnvelopeIcon,
@@ -82,7 +83,7 @@ export const adminMenuSections: AdminMenuSection[] = [
         id: 'hvac-assistant',
         title: 'Hvac Assistant',
         description: 'Manage brands, models, and chats',
-        items: [            
+        items: [
             {
                 id: 'brands',
                 title: 'Brands',
@@ -100,6 +101,27 @@ export const adminMenuSections: AdminMenuSection[] = [
                 title: 'Chats',
                 href: '/chats',
                 icon: ClockIcon,
+            },
+        ],
+    },
+    {
+        id: 'monetization',
+        title: 'Monetization',
+        description: 'Manage subscription plans and billing',
+        items: [
+            {
+                id: 'plans',
+                title: 'Plans',
+                href: '/plans',
+                // Updated relatedRoutes to properly match dynamic slugs
+                relatedRoutes: [
+                    '/plans', 
+                    '/plans/create', 
+                    // Use wildcard regex pattern to match any slug
+                    '/plans/[^/]+/edit', 
+                    '/plans/[^/]+' 
+                ],
+                icon: BanknotesIcon,
             },
         ],
     },

@@ -43,6 +43,9 @@ return new class extends Migration
             $table->boolean('terms_and_conditions')->default(false);
             $table->enum('status', ['active', 'inactive'])->default('active');
 
+            // Added Payment Provider Customer Identifiers
+            $table->string('stripe_customer_id')->nullable()->index();
+
             // Systems Timestamps
             $table->rememberToken();
             $table->timestamp('created_at')->useCurrent();

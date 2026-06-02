@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Modules\Monetization\Models\Payment;
+use Modules\Monetization\Models\Subscription;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -33,6 +35,7 @@ class User extends Authenticatable implements JWTSubject
         'state',
         'city',
         'zip_code',
+        // 'stripe_customer_id',
         'avatar',
         'terms_and_conditions',
         'status',
@@ -57,6 +60,7 @@ class User extends Authenticatable implements JWTSubject
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
+        'stripe_customer_id',
     ];
 
     /**
@@ -73,6 +77,15 @@ class User extends Authenticatable implements JWTSubject
             'terms_and_conditions' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the route key for the model.
+     * This tells Laravel to use 'slug' instead of 'id' for route model binding.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'username';
     }
 
     public function getJWTIdentifier(): mixed
