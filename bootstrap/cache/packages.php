@@ -1,4 +1,16 @@
 <?php return array (
+  'imdhemy/laravel-purchases' => 
+  array (
+    'aliases' => 
+    array (
+      'Product' => '\\Imdhemy\\Purchases\\Facades\\Product',
+      'Subscription' => '\\Imdhemy\\Purchases\\Facades\\Subscription',
+    ),
+    'providers' => 
+    array (
+      0 => 'Imdhemy\\Purchases\\ServiceProviders\\LiapServiceProvider',
+    ),
+  ),
   'inertiajs/inertia-laravel' => 
   array (
     'providers' => 

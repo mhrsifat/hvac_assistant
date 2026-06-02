@@ -13,5 +13,18 @@ services:
       - pg_vector_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_ui
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@hvac.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres_vector
+
 volumes:
   pg_vector_data:
+  
