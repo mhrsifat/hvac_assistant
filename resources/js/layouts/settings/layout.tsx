@@ -41,6 +41,14 @@ const sidebarNavItems: SettingsNavItem[] = [
                 title: 'AI settings',
                 href: '/settings/integration/ai',
             },
+            {
+                title: 'Google settings',
+                href: '/settings/integration/google',
+            },
+            {
+                title: 'Apple settings',
+                href: '/settings/integration/apple',
+            },
         ],
     },
     {

@@ -2,6 +2,7 @@
 
 namespace Modules\Monetization\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -58,6 +59,14 @@ class Plan extends Model
             'trial_days' => 'integer',
             'is_recommended' => 'boolean',
         ];
+    }
+
+    /**
+     * Scope a query to only include active plans.
+     */
+    public function scopeActive(Builder $query)
+    {
+        return $query->where('status', 'active');
     }
 
     /**

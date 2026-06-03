@@ -26,6 +26,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::post('ai', [IntegrationSettingController::class, 'updateAi'])
                 ->name('integration-settings.ai.update');
+
+            Route::get('google', [IntegrationSettingController::class, 'google'])
+                ->name('integration-settings.google.edit');
+
+            Route::post('google', [IntegrationSettingController::class, 'updateGoogle'])
+                ->name('integration-settings.google.update');
+
+            Route::get('apple', [IntegrationSettingController::class, 'apple'])
+                ->name('integration-settings.apple.edit');
+
+            Route::post('apple', [IntegrationSettingController::class, 'updateApple'])
+                ->name('integration-settings.apple.update');
         });
     });
 

@@ -115,11 +115,11 @@ export const adminMenuSections: AdminMenuSection[] = [
                 href: '/plans',
                 // Updated relatedRoutes to properly match dynamic slugs
                 relatedRoutes: [
-                    '/plans', 
-                    '/plans/create', 
+                    '/plans',
+                    '/plans/create',
                     // Use wildcard regex pattern to match any slug
-                    '/plans/[^/]+/edit', 
-                    '/plans/[^/]+' 
+                    '/plans/[^/]+/edit',
+                    '/plans/[^/]+',
                 ],
                 icon: BanknotesIcon,
             },
@@ -159,6 +159,7 @@ export const adminMenuSections: AdminMenuSection[] = [
                             '/settings/password',
                             '/settings/appearance',
                             '/settings/account',
+                            ''
                         ],
                         icon: UserIcon,
                         permissions: ['manage settings'],
@@ -209,6 +210,20 @@ export const adminMenuSections: AdminMenuSection[] = [
                                 id: 'integration-settings-ai',
                                 title: 'AI settings',
                                 href: '/settings/integration/ai',
+                                permissions: ['manage settings'],
+                                roles: ['super-admin', 'admin'],
+                            },
+                            {
+                                id: 'integration-settings-google',
+                                title: 'Google settings',
+                                href: '/settings/integration/google',
+                                permissions: ['manage settings'],
+                                roles: ['super-admin', 'admin'],
+                            },
+                            {
+                                id: 'integration-settings-apple',
+                                title: 'Apple settings',
+                                href: '/settings/integration/apple',
                                 permissions: ['manage settings'],
                                 roles: ['super-admin', 'admin'],
                             },

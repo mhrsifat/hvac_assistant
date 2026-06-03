@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Monetization\Http\Controllers\PlanController;
+use Modules\Monetization\Http\Controllers\Web\PlanController;
 
 Route::middleware(['auth', 'verified', 'role:admin|super-admin'])
     ->controller(PlanController::class)

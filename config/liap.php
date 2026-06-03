@@ -67,6 +67,16 @@ return [
          |
          */
 
+        \Imdhemy\Purchases\Events\AppStore\Subscribed::class => [
+            \Modules\Monetization\Listeners\SubscriptionEventSubscriber::class,
+        ],
+        \Imdhemy\Purchases\Events\AppStore\DidRenew::class => [
+            \Modules\Monetization\Listeners\SubscriptionEventSubscriber::class,
+        ],
+        \Imdhemy\Purchases\Events\AppStore\Expired::class => [
+            \Modules\Monetization\Listeners\SubscriptionEventSubscriber::class,
+        ],
+
         /*  \Imdhemy\Purchases\Events\AppStore\Cancel::class => [
               \App\Listeners\AppStore\Cancel::class,
           ],*/
@@ -79,6 +89,19 @@ return [
          | These event listeners are triggered when a new notification is received from Google Play
          | @see @see https://imdhemy.com/laravel-iap-docs/docs/server-notifications/event-list#google-play-events
          */
+
+        \Imdhemy\Purchases\Events\GooglePlay\SubscriptionPurchased::class => [
+            \Modules\Monetization\Listeners\SubscriptionEventSubscriber::class,
+        ],
+        \Imdhemy\Purchases\Events\GooglePlay\SubscriptionRenewed::class => [
+            \Modules\Monetization\Listeners\SubscriptionEventSubscriber::class,
+        ],
+        \Imdhemy\Purchases\Events\GooglePlay\SubscriptionExpired::class => [
+            \Modules\Monetization\Listeners\SubscriptionEventSubscriber::class,
+        ],
+        \Imdhemy\Purchases\Events\GooglePlay\SubscriptionCanceled::class => [
+            \Modules\Monetization\Listeners\SubscriptionEventSubscriber::class,
+        ],
 
         /* \Imdhemy\Purchases\Events\GooglePlay\SubscriptionRecovered::class => [
              \App\Listeners\GooglePlay\SubscriptionRecovered::class,

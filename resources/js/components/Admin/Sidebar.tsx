@@ -1,6 +1,6 @@
 import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Link } from '@inertiajs/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -72,6 +72,27 @@ export default function Sidebar({
 }: SidebarProps) {
     const theme = getThemeConfig();
     const { currentUrl, isCurrentUrl } = useCurrentUrl();
+    
+    // --- SCROLL PRESERVATION LOGIC START ---
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const savedScrollPos = sessionStorage.getItem('admin.sidebarScrollPos');
+        if (savedScrollPos && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = parseInt(savedScrollPos, 10);
+        }
+    }, []);
+
+    const handleScroll = () => {
+        if (scrollContainerRef.current) {
+            sessionStorage.setItem(
+                'admin.sidebarScrollPos', 
+                scrollContainerRef.current.scrollTop.toString()
+            );
+        }
+    };
+    // --- SCROLL PRESERVATION LOGIC END ---
+
     const [openMenus, setOpenMenus] = useState<string[]>(() => {
         if (typeof window === 'undefined') {
             return [];
@@ -366,7 +387,12 @@ export default function Sidebar({
                 isSidebarVisible ? 'translate-x-0' : '-translate-x-full',
             )}
         >
-            <div className="flex-1 space-y-6 overflow-y-auto px-3 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 space-y-6 overflow-y-auto px-3 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                style={{ overflowAnchor: 'none' }}
+            >
                 {authorizedSections.map((section) => {
                     return (
                         <section key={section.id} className="space-y-2">

@@ -1,10 +1,10 @@
 <?php
 
-namespace Modules\Monetization\Services;
+namespace Modules\Monetization\Services\Web;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Modules\Monetization\Models\Plan;
 use Illuminate\Support\Str;
+use Modules\Monetization\Models\Plan;
 
 class PlanService
 {
@@ -80,14 +80,14 @@ class PlanService
         // Simplify features array: Keep only non-empty strings
         $features = $data['features'] ?? [];
         $data['features'] = collect($features)
-            ->filter(fn($feature) => is_string($feature) && trim($feature) !== '')
-            ->map(fn($feature) => trim($feature))
+            ->filter(fn ($feature) => is_string($feature) && trim($feature) !== '')
+            ->map(fn ($feature) => trim($feature))
             ->values()
             ->all();
 
         // Clean up optional IDs (Nullify empty strings)
         foreach (['apple_product_id', 'google_product_id'] as $key) {
-            if (array_key_exists($key, $data) && trim((string)$data[$key]) === '') {
+            if (array_key_exists($key, $data) && trim((string) $data[$key]) === '') {
                 $data[$key] = null;
             }
         }

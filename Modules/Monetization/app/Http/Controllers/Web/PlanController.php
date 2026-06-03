@@ -1,6 +1,6 @@
 <?php
 
-namespace Modules\Monetization\Http\Controllers;
+namespace Modules\Monetization\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Monetization\Models\Plan;
-use Modules\Monetization\Services\PlanService;
+use Modules\Monetization\Services\Web\PlanService;
 
 class PlanController extends Controller
 {
@@ -24,7 +24,7 @@ class PlanController extends Controller
             'filters' => [
                 'search' => $search,
             ],
-            'plans' => Inertia::defer(fn() => $this->planService->paginateForIndex(
+            'plans' => Inertia::defer(fn () => $this->planService->paginateForIndex(
                 search: $search !== '' ? $search : null,
             )),
         ]);
@@ -75,10 +75,10 @@ class PlanController extends Controller
             'currency' => ['required', 'string', 'max:3'],
             'apple_product_id' => ['nullable', 'string', 'max:255'],
             'google_product_id' => ['nullable', 'string', 'max:255'],
-            
+
             'features' => ['nullable', 'array'],
             'features.*' => ['required', 'string', 'max:255'],
-            
+
             'billing_interval' => ['required', 'in:daily,weekly,monthly,yearly,lifetime'],
             'trial_days' => ['nullable', 'integer', 'min:0'],
             'is_recommended' => ['nullable', 'boolean'],
