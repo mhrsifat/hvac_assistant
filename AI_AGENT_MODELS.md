@@ -4,11 +4,13 @@ Use the real database columns exactly as they exist in the migrations. Do not gu
 
 ## brands
 
+- `slug`: brand slug.
 - `name`: brand display name such as Samsung or LG.
 - `logo_path`: stored path for the brand logo image.
 
 ## hvac_models
 
+- `slug`: hvac model slug.
 - `brand_id`: links the HVAC model to its brand.
 - `name`: user-facing model name.
 - `model_number`: manufacturer model code when available.

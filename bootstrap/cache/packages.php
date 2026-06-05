@@ -143,6 +143,13 @@
       0 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
     ),
   ),
+  'nunomaduro/laravel-sluggable' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'NunoMaduro\\LaravelSluggable\\SluggableServiceProvider',
+    ),
+  ),
   'nunomaduro/termwind' => 
   array (
     'providers' => 

@@ -12,6 +12,7 @@ return new class extends Migration
     {
         Schema::create('hvac_models', function (Blueprint $table) {
             $table->id();
+            $table->string('slug');
             $table->foreignId('brand_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('model_number')->nullable();

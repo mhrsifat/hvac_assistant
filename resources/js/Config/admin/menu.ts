@@ -286,6 +286,13 @@ export const adminMenuSections: AdminMenuSection[] = [
                         permissions: ['manage settings'],
                         roles: ['super-admin', 'admin'],
                     },
+                    {
+                        id: 'development-db-manager',
+                        title: 'Database Manager',
+                        href: '/settings/development/db-manager',
+                        permissions: ['manage settings'],
+                        roles: ['super-admin', 'admin'],
+                    },
                 ],
             },
         ],

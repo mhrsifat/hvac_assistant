@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use NunoMaduro\LaravelSluggable\Attributes\Sluggable;
 
+#[Sluggable(from: 'name')]
 class HvacModel extends Model
 {
     use HasFactory;
@@ -16,6 +18,7 @@ class HvacModel extends Model
 
     protected $fillable = [
         'brand_id',
+        'slug',
         'name',
         'model_number',
         'capacity_btu',

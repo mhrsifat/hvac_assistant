@@ -21,3 +21,6 @@ require __DIR__.'/Api/settings.php';
 require __DIR__.'/Web/v1/brands.php';
 require __DIR__.'/Web/v1/hvac_models.php';
 require __DIR__.'/Web/v1/chats.php';
+
+require __DIR__.'/Api/v1/brands.php';
+require __DIR__.'/Api/v1/hvac_models.php';

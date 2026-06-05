@@ -1,10 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Settings\Http\Controllers\DatabaseManagerController;
+use Modules\Settings\Http\Controllers\DevelopmentController;
 use Modules\Settings\Http\Controllers\IntegrationSettingController;
 use Modules\Settings\Http\Controllers\SettingsController;
 use Modules\Settings\Http\Controllers\SystemSettingController;
-use Modules\Settings\Http\Controllers\DevelopmentController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:super-admin|admin')->group(function () {
@@ -41,9 +42,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
-    Route::get('settings/development/chat-broadcast-tester', [DevelopmentController::class, 'broadcastTester'])
-        ->name('development.chat-broadcast-tester')
-        ->middleware('role:super-admin|admin');
+    Route::prefix('settings/development')->group(function () {
+        Route::get('chat-broadcast-tester', [DevelopmentController::class, 'broadcastTester'])
+            ->name('development.chat-broadcast-tester')
+            ->middleware('role:super-admin|admin');
+
+        Route::middleware('role:super-admin|admin')->group(function () {
+            Route::get('db-manager', [DatabaseManagerController::class, 'index'])
+                ->name('development.db-manager');
+            Route::get('db-manager/download/{connection}', [DatabaseManagerController::class, 'download'])
+                ->name('development.db-manager.download');
+            Route::get('db-manager/download-all', [DatabaseManagerController::class, 'downloadAll'])
+                ->name('development.db-manager.download-all');
+            Route::post('db-manager/upload/{connection}', [DatabaseManagerController::class, 'upload'])
+                ->name('development.db-manager.upload');
+        });
+    });
 
     Route::resource('settings', SettingsController::class)->names('settings');
 });

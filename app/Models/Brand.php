@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use NunoMaduro\LaravelSluggable\Attributes\Sluggable;
 
+#[Sluggable(from: 'name')]
 class Brand extends Model
 {
     use HasFactory;
@@ -14,6 +16,7 @@ class Brand extends Model
     protected $connection = 'mysql';
 
     protected $fillable = [
+        'slug',
         'name',
         'logo_path',
     ];
