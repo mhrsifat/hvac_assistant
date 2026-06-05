@@ -1,4 +1,7 @@
-import AdminLayout from '@/layouts/AdminLayout';
+import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Eye, Plus, X } from 'lucide-react';
+import type { FormEvent} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,9 +14,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Eye, Plus, X } from 'lucide-react';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import AdminLayout from '@/layouts/AdminLayout';
 
 type Brand = {
     id: number;
@@ -75,10 +76,12 @@ export default function BrandsIndex() {
             preserveScroll: true,
             onSuccess: () => {
                 createForm.reset();
+
                 // Manually clear the physical file input element
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                 }
+
                 setIsCreateOpen(false);
             },
         });

@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Ai\Ai;
 use PhpOffice\PhpSpreadsheet\IOFactory as SpreadsheetIOFactory;
 use PhpOffice\PhpWord\IOFactory as WordIOFactory;
 use RuntimeException;
@@ -58,9 +59,9 @@ class SupportDocumentService
             throw new RuntimeException('No readable text found in the document.');
         }
 
-        $prefix = 'Brand: ' . $brand->name . '. Document: ' . $document->original_name . '. ';
+        $prefix = 'Brand: '.$brand->name.'. Document: '.$document->original_name.'. ';
         $chunks = array_map(
-            static fn(string $chunk): string => $prefix . $chunk,
+            static fn (string $chunk): string => $prefix.$chunk,
             $this->chunkText($cleanText, 1000, 200),
         );
 
@@ -150,7 +151,7 @@ class SupportDocumentService
 
         foreach ($spreadsheet->getAllSheets() as $sheet) {
             foreach ($sheet->toArray(null, true, true, true) as $row) {
-                $rowValues = array_values(array_filter($row, static fn($value): bool => $value !== null && $value !== ''));
+                $rowValues = array_values(array_filter($row, static fn ($value): bool => $value !== null && $value !== ''));
 
                 if ($rowValues !== []) {
                     $rows[] = implode(' - ', $rowValues);
@@ -199,47 +200,26 @@ class SupportDocumentService
      */
     private function storeEmbeddings(array $chunks): void
     {
-        $apiKey = (string) config('ai.providers.openai.key', '');
-
-        if ($apiKey === '') {
-            throw new RuntimeException('OpenAI API key is not configured.');
-        }
-
         $connection = DB::connection('pgsql_vector');
 
-        $connection->transaction(function () use ($chunks, $apiKey, $connection): void {
+        $connection->transaction(function () use ($chunks, $connection): void {
             foreach ($chunks as $chunk) {
-                $embeddingResponse = Http::withToken($apiKey)
-                    ->acceptJson()
-                    ->timeout(60)
-                    ->post('https://api.openai.com/v1/embeddings', [
-                        // Ensure your model here matches the dimension size in your migration
-                        'model' => 'text-embedding-3-small',
-                        'input' => $chunk,
-                    ]);
+                // Using Laravel 13 AI SDK instead of raw HTTP calls
+                $embeddingsResponse = Ai::embeddings([$chunk]);
+                $embedding = $embeddingsResponse->first();
 
-                if ($embeddingResponse->failed()) {
-                    $message = (string) $embeddingResponse->json('error.message', 'OpenAI embeddings request failed.');
-
-                    throw new RuntimeException($message);
+                if (! is_array($embedding) || empty($embedding)) {
+                    throw new RuntimeException('AI SDK embeddings response was empty.');
                 }
 
-                $embedding = $embeddingResponse->json('data.0.embedding', []);
-
-                if (! is_array($embedding) || $embedding === []) {
-                    throw new RuntimeException('OpenAI embeddings response was empty.');
-                }
-
-                // Use json_encode to perfectly format the array as a string: "[0.123, -0.456, ...]"
                 $vectorString = json_encode($embedding);
 
-                // FIX: Use PostgreSQL pgvector syntax (?::vector) instead of TO_VECTOR(?)
                 $connection->insert(
                     'INSERT INTO manual_vectors (content, embedding) VALUES (?, ?::vector)',
                     [$chunk, $vectorString],
                 );
 
-                usleep(200000);
+                usleep(200000); // 200ms delay to prevent rate-limiting
             }
         });
     }

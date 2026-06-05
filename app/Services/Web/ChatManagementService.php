@@ -13,8 +13,9 @@ class ChatManagementService
     public function userOptions(): Collection
     {
         return User::query()
-            ->select(['id', 'name', 'email'])
-            ->orderBy('name')
+            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->orderBy('first_name')
+            ->orderBy('last_name')
             ->get();
     }
 
@@ -31,7 +32,7 @@ class ChatManagementService
     {
         return Chat::query()
             ->with([
-                'user:id,name,email',
+                'user:id,first_name,last_name,email',
                 'hvacModel:id,name,brand_id',
                 'hvacModel.brand:id,name',
             ])
@@ -44,7 +45,8 @@ class ChatManagementService
                     $nestedQuery
                         ->where('title', 'like', "%{$searchTerm}%")
                         ->orWhereHas('user', function ($userQuery) use ($searchTerm): void {
-                            $userQuery->where('name', 'like', "%{$searchTerm}%");
+                            $userQuery->where('first_name', 'like', "%{$searchTerm}%")
+                                ->orWhere('last_name', 'like', "%{$searchTerm}%");
                         })
                         ->orWhereHas('hvacModel', function ($modelQuery) use ($searchTerm): void {
                             $modelQuery

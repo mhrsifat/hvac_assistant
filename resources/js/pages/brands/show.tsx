@@ -1,4 +1,7 @@
-import AdminLayout from '@/layouts/AdminLayout';
+import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowLeft, Eye, Plus, Sparkles, Trash2, Upload, X, AlertCircle, FileText } from 'lucide-react';
+import type { FormEvent} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +15,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Eye, Plus, Sparkles, Trash2, Upload, X, AlertCircle, FileText } from 'lucide-react';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import AdminLayout from '@/layouts/AdminLayout';
 
 type Brand = {
   id: number;
@@ -76,15 +77,21 @@ type BrandShowProps = {
 };
 
 const formatFileSize = (size: number): string => {
-  if (!Number.isFinite(size) || size <= 0) return '0 B';
+  if (!Number.isFinite(size) || size <= 0) {
+return '0 B';
+}
+
   const units = ['B', 'KB', 'MB', 'GB'];
   let index = 0;
   let value = size;
+
   while (value >= 1024 && index < units.length - 1) {
     value /= 1024;
     index++;
   }
+
   const precision = value >= 10 || index === 0 ? 0 : 1;
+
   return `${value.toFixed(precision)} ${units[index]}`;
 };
 
@@ -130,24 +137,33 @@ export default function BrandShow() {
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
-    else if (e.type === 'dragleave') setDragActive(false);
+
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+setDragActive(true);
+} else if (e.type === 'dragleave') {
+setDragActive(false);
+}
   };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
+
     if (files.length) {
       documentForm.setData('documents', [...documentForm.data.documents, ...files]);
     }
   };
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+
     if (files.length) {
       documentForm.setData('documents', [...documentForm.data.documents, ...files]);
     }
-    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    if (fileInputRef.current) {
+fileInputRef.current.value = '';
+}
   };
 
   const submitDocument = (event: FormEvent<HTMLFormElement>) => {
@@ -166,6 +182,7 @@ export default function BrandShow() {
         errorEntries.forEach(([key, value]) => {
           if (key.startsWith('documents')) {
             const match = key.match(/\.(\d+)$/);
+
             if (match) {
               const idx = parseInt(match[1], 10);
               const fileName = documentForm.data.documents[idx]?.name || `File ${idx + 1}`;
@@ -176,6 +193,7 @@ export default function BrandShow() {
           }
         });
         setUploadErrors(fileErrors);
+
         if (Object.keys(fileErrors).length) {
           const errorText = Object.entries(fileErrors).map(([f, e]) => `${f}: ${e}`).join('\n');
           setFullUploadErrorText(errorText);
@@ -190,6 +208,7 @@ export default function BrandShow() {
     const removedFileName = documentForm.data.documents[index]?.name;
     newDocs.splice(index, 1);
     documentForm.setData('documents', newDocs);
+
     if (removedFileName && uploadErrors[removedFileName]) {
       const newErrors = { ...uploadErrors };
       delete newErrors[removedFileName];
@@ -210,20 +229,41 @@ export default function BrandShow() {
 
   const openDeleteBrandModal = () => setIsDeleteBrandOpen(true);
   const confirmDeleteBrand = () => router.delete(`/brands/${brand.id}`, { preserveScroll: true, onSuccess: () => setIsDeleteBrandOpen(false) });
-  const openDeleteDocumentModal = (doc: SupportDocument) => { setDeleteDocumentTarget(doc); setIsDeleteDocumentOpen(true); };
+  const openDeleteDocumentModal = (doc: SupportDocument) => {
+ setDeleteDocumentTarget(doc); setIsDeleteDocumentOpen(true); 
+};
   const confirmDeleteDocument = () => {
-    if (!deleteDocumentTarget) return;
-    router.delete(`/brands/${brand.id}/documents/${deleteDocumentTarget.id}`, { preserveScroll: true, onSuccess: () => { setIsDeleteDocumentOpen(false); setDeleteDocumentTarget(null); } });
+    if (!deleteDocumentTarget) {
+return;
+}
+
+    router.delete(`/brands/${brand.id}/documents/${deleteDocumentTarget.id}`, { preserveScroll: true, onSuccess: () => {
+ setIsDeleteDocumentOpen(false); setDeleteDocumentTarget(null); 
+} });
   };
-  const openFeedModal = (doc: SupportDocument) => { setFeedTarget(doc); setIsFeedOpen(true); };
+  const openFeedModal = (doc: SupportDocument) => {
+ setFeedTarget(doc); setIsFeedOpen(true); 
+};
   const confirmFeed = () => {
-    if (!feedTarget) return;
-    router.post(`/brands/${brand.id}/documents/${feedTarget.id}/feed`, {}, { preserveScroll: true, onSuccess: () => { setIsFeedOpen(false); setFeedTarget(null); } });
+    if (!feedTarget) {
+return;
+}
+
+    router.post(`/brands/${brand.id}/documents/${feedTarget.id}/feed`, {}, { preserveScroll: true, onSuccess: () => {
+ setIsFeedOpen(false); setFeedTarget(null); 
+} });
   };
-  const openDeleteErrorCodeModal = (ec: ErrorCode) => { setDeleteErrorCodeTarget(ec); setIsDeleteErrorCodeOpen(true); };
+  const openDeleteErrorCodeModal = (ec: ErrorCode) => {
+ setDeleteErrorCodeTarget(ec); setIsDeleteErrorCodeOpen(true); 
+};
   const confirmDeleteErrorCode = () => {
-    if (!deleteErrorCodeTarget) return;
-    router.delete(`/brands/${brand.id}/error-codes/${deleteErrorCodeTarget.id}`, { preserveScroll: true, onSuccess: () => { setIsDeleteErrorCodeOpen(false); setDeleteErrorCodeTarget(null); } });
+    if (!deleteErrorCodeTarget) {
+return;
+}
+
+    router.delete(`/brands/${brand.id}/error-codes/${deleteErrorCodeTarget.id}`, { preserveScroll: true, onSuccess: () => {
+ setIsDeleteErrorCodeOpen(false); setDeleteErrorCodeTarget(null); 
+} });
   };
 
   return (
@@ -257,7 +297,13 @@ export default function BrandShow() {
               </div>
               <div className="flex flex-wrap gap-3">
                 {/* UPLOAD MODAL - Drag & Drop, Compact */}
-                <Dialog open={isDocumentOpen} onOpenChange={(open) => { setIsDocumentOpen(open); if (!open) setUploadErrors({}); }}>
+                <Dialog open={isDocumentOpen} onOpenChange={(open) => {
+ setIsDocumentOpen(open);
+
+ if (!open) {
+setUploadErrors({});
+} 
+}}>
                   <DialogTrigger asChild>
                     <Button className="gap-2"><Upload className="h-4 w-4" />Upload document</Button>
                   </DialogTrigger>
@@ -287,7 +333,9 @@ export default function BrandShow() {
                             <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
                               {documentForm.data.documents.length} file(s) selected
                             </label>
-                            <Button type="button" variant="ghost" size="sm" onClick={() => { documentForm.setData('documents', []); setUploadErrors({}); }} className="h-7 gap-1 text-xs text-red-600">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => {
+ documentForm.setData('documents', []); setUploadErrors({}); 
+}} className="h-7 gap-1 text-xs text-red-600">
                               <X className="h-3 w-3" />Clear all
                             </Button>
                           </div>
@@ -334,7 +382,13 @@ export default function BrandShow() {
                 </Dialog>
 
                 {/* Feed AI modal */}
-                <Dialog open={isFeedOpen} onOpenChange={(open) => { setIsFeedOpen(open); if (!open) setFeedTarget(null); }}>
+                <Dialog open={isFeedOpen} onOpenChange={(open) => {
+ setIsFeedOpen(open);
+
+ if (!open) {
+setFeedTarget(null);
+} 
+}}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Feed document to AI</DialogTitle><DialogDescription>Process document and use AI tokens.</DialogDescription></DialogHeader>
                     <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -356,7 +410,13 @@ export default function BrandShow() {
                 </Dialog>
 
                 {/* Delete document modal */}
-                <Dialog open={isDeleteDocumentOpen} onOpenChange={(open) => { setIsDeleteDocumentOpen(open); if (!open) setDeleteDocumentTarget(null); }}>
+                <Dialog open={isDeleteDocumentOpen} onOpenChange={(open) => {
+ setIsDeleteDocumentOpen(open);
+
+ if (!open) {
+setDeleteDocumentTarget(null);
+} 
+}}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Delete document</DialogTitle><DialogDescription>Permanently remove document from brand.</DialogDescription></DialogHeader>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{deleteDocumentTarget?.original_name ?? 'Selected document'}</div>
@@ -365,7 +425,13 @@ export default function BrandShow() {
                 </Dialog>
 
                 {/* Delete error code modal */}
-                <Dialog open={isDeleteErrorCodeOpen} onOpenChange={(open) => { setIsDeleteErrorCodeOpen(open); if (!open) setDeleteErrorCodeTarget(null); }}>
+                <Dialog open={isDeleteErrorCodeOpen} onOpenChange={(open) => {
+ setIsDeleteErrorCodeOpen(open);
+
+ if (!open) {
+setDeleteErrorCodeTarget(null);
+} 
+}}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Delete error code</DialogTitle><DialogDescription>Permanently remove error code entry.</DialogDescription></DialogHeader>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{deleteErrorCodeTarget?.code ?? 'Selected error code'}</div>

@@ -2,9 +2,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/layouts/AdminLayout';
+import { index as plansIndex } from '@/routes/plans';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, CreditCard, Users } from 'lucide-react';
-import { index as plansIndex } from '@/routes/plans';
 
 // Type Definitions
 type Plan = {
@@ -61,7 +61,10 @@ type ShowPageProps = {
 
 // Helpers
 const formatPrice = (value: string | number | null | undefined, currency: string): string => {
-  if (value === null || value === undefined || value === '') return '—';
+  if (value === null || value === undefined || value === '') {
+return '—';
+}
+
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Number(value));
   } catch {
@@ -70,7 +73,10 @@ const formatPrice = (value: string | number | null | undefined, currency: string
 };
 
 const formatDate = (dateString: string | null): string => {
-  if (!dateString) return '—';
+  if (!dateString) {
+return '—';
+}
+
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',

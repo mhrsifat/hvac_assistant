@@ -4,10 +4,12 @@ namespace Modules\Monetization\Http\Controllers\Api;
 
 use App\Concerns\ApiResponse;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Modules\Monetization\DTOs\SubscriptionDataDTO;
 use Modules\Monetization\Models\Plan;
 use Modules\Monetization\Models\Subscription;
 use Modules\Monetization\Services\Api\AppleSubscriptionService;
@@ -37,14 +39,14 @@ class SubscriptionController extends Controller
         try {
             $verifiedData = $this->appleService->verifyReceipt($request->receipt_data);
 
-            if (!$verifiedData) {
+            if (! $verifiedData) {
                 return $this->error(400, 'Invalid Apple receipt');
             }
 
             // Securely resolve the Plan using the Product ID from Apple's servers
             $plan = Plan::where('apple_product_id', $verifiedData->productId)->first();
 
-            if (!$plan) {
+            if (! $plan) {
                 return $this->error(404, 'Plan not found for this product');
             }
 
@@ -57,7 +59,8 @@ class SubscriptionController extends Controller
 
             return $this->success(200, 'Apple subscription activated successfully.', $subscription);
         } catch (Exception $e) {
-            Log::error('Apple Verification Error: ' . $e->getMessage());
+            Log::error('Apple Verification Error: '.$e->getMessage());
+
             return $this->error(500, 'Server error during Apple verification');
         }
     }
@@ -67,7 +70,7 @@ class SubscriptionController extends Controller
      */
     public function verifyGoogle(Request $request): JsonResponse
     {
-        // Removed plan_slug. 
+        // Removed plan_slug.
         $request->validate([
             'item_id' => 'required|string',
             'purchase_token' => 'required|string',
@@ -76,14 +79,14 @@ class SubscriptionController extends Controller
         try {
             $verifiedData = $this->googleService->verifyPurchase($request->item_id, $request->purchase_token);
 
-            if (!$verifiedData) {
+            if (! $verifiedData) {
                 return $this->error(400, 'Invalid Google purchase token');
             }
 
             // Securely resolve the Plan using the Product ID from Google's servers
             $plan = Plan::where('google_product_id', $verifiedData->productId)->first();
 
-            if (!$plan) {
+            if (! $plan) {
                 return $this->error(404, 'Plan not found for this product');
             }
 
@@ -96,7 +99,8 @@ class SubscriptionController extends Controller
 
             return $this->success(200, 'Google subscription activated successfully.', $subscription);
         } catch (Exception $e) {
-            Log::error('Google Verification Error: ' . $e->getMessage());
+            Log::error('Google Verification Error: '.$e->getMessage());
+
             return response()->json(['success' => false, 'message' => 'Server error during Google verification'], 500);
         }
     }
@@ -111,7 +115,7 @@ class SubscriptionController extends Controller
                 ->where('status', 'active')
                 ->first();
 
-            if (!$subscription) {
+            if (! $subscription) {
                 return $this->error(404, 'No active subscription found');
             }
 
@@ -122,7 +126,8 @@ class SubscriptionController extends Controller
 
             return $this->success(200, 'Subscription marked as cancelled.', $subscription);
         } catch (Exception $e) {
-            Log::error('Cancel Subscription Error: ' . $e->getMessage());
+            Log::error('Cancel Subscription Error: '.$e->getMessage());
+
             return $this->error(500, 'An error occurred while cancelling subscription');
         }
     }
@@ -142,12 +147,12 @@ class SubscriptionController extends Controller
             $plan = Plan::where('slug', $request->plan_slug)->firstOrFail();
 
             $hasTrial = $request->boolean('has_trial', true);
-            $now = now();
+            $now = Carbon::now();
             $trialEnd = $hasTrial ? $now->copy()->addDays(7) : null;
             $endsAt = $hasTrial ? $trialEnd : $now->copy()->addMonth();
 
-            $mockVerifiedData = new \Modules\Monetization\DTOs\SubscriptionDataDTO(
-                providerSubscriptionId: 'demo_sub_' . uniqid(),
+            $mockVerifiedData = new SubscriptionDataDTO(
+                providerSubscriptionId: 'demo_sub_'.uniqid(),
                 productId: $plan->apple_product_id ?? 'demo_product',
                 startsAt: $now,
                 endsAt: $endsAt,
@@ -164,7 +169,8 @@ class SubscriptionController extends Controller
 
             return $this->success(200, 'Demo subscription created successfully', $subscription);
         } catch (Exception $e) {
-            Log::error('Simulate Subscription Error: ' . $e->getMessage());
+            Log::error('Simulate Subscription Error: '.$e->getMessage());
+
             return $this->error(500, 'Server error during simulation');
         }
     }

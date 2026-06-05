@@ -11,9 +11,7 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
 
-        Route::patch('{chat}/status', 'updateStatus')
-            ->name('update-status');
-
-        Route::delete('{chat}', 'destroy')
-            ->name('destroy');
+        Route::get('{chat}', 'show')->name('show');
+        Route::patch('{chat}/status', 'updateStatus')->name('update-status');
+        Route::delete('{chat}', 'destroy')->name('destroy');
     });

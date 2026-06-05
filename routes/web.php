@@ -20,3 +20,5 @@ require __DIR__.'/Web/auth.php';
 require __DIR__.'/Web/v1/brands.php';
 require __DIR__.'/Web/v1/hvac_models.php';
 require __DIR__.'/Web/v1/chats.php';
+require __DIR__.'/Web/v1/users.php';
+require __DIR__.'/Web/v1/user_search.php';

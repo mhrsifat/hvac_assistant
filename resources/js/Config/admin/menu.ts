@@ -1,9 +1,12 @@
 import {
     BanknotesIcon,
+    ChartBarIcon,
     ClockIcon,
     Cog6ToothIcon,
+    CreditCardIcon,
     EnvelopeIcon,
     GlobeAltIcon,
+    ReceiptRefundIcon,
     SquaresPlusIcon,
     UserIcon,
     UsersIcon,
@@ -67,15 +70,23 @@ export type AdminSearchItem = {
 
 export const adminMenuSections: AdminMenuSection[] = [
     {
-        id: 'dashboard',
-        title: 'Dashboard',
-        description: 'Manage brands, models, and chats',
+        id: 'overview',
+        title: 'Overview',
+        description: 'Platform insights and user administration',
         items: [
             {
                 id: 'dashboard',
                 title: 'Dashboard',
                 href: dashboard(),
                 icon: Cog6ToothIcon,
+            },
+            {
+                id: 'users',
+                title: 'User management',
+                href: '/users',
+                relatedRoutes: ['/users', '/users/[^/]+'],
+                icon: UsersIcon,
+                roles: ['super-admin', 'admin'],
             },
         ],
     },
@@ -110,6 +121,13 @@ export const adminMenuSections: AdminMenuSection[] = [
         description: 'Manage subscription plans and billing',
         items: [
             {
+                id: 'analytics',
+                title: 'Analytics',
+                href: '/monetization/analytics',
+                relatedRoutes: ['/monetization/analytics'],
+                icon: ChartBarIcon,
+            },
+            {
                 id: 'plans',
                 title: 'Plans',
                 href: '/plans',
@@ -122,6 +140,20 @@ export const adminMenuSections: AdminMenuSection[] = [
                     '/plans/[^/]+',
                 ],
                 icon: BanknotesIcon,
+            },
+            {
+                id: 'subscriptions',
+                title: 'Subscriptions',
+                href: '/subscriptions',
+                relatedRoutes: ['/subscriptions', '/subscriptions/[^/]+'],
+                icon: CreditCardIcon,
+            },
+            {
+                id: 'transactions',
+                title: 'Transactions',
+                href: '/transactions',
+                relatedRoutes: ['/transactions', '/transactions/[^/]+'],
+                icon: ReceiptRefundIcon,
             },
         ],
     },
@@ -159,7 +191,7 @@ export const adminMenuSections: AdminMenuSection[] = [
                             '/settings/password',
                             '/settings/appearance',
                             '/settings/account',
-                            ''
+                            '',
                         ],
                         icon: UserIcon,
                         permissions: ['manage settings'],
@@ -255,13 +287,6 @@ export const adminMenuSections: AdminMenuSection[] = [
                         roles: ['super-admin', 'admin'],
                     },
                 ],
-            },
-            {
-                id: 'users',
-                title: 'User management',
-                href: null,
-                icon: UsersIcon,
-                roles: ['super-admin', 'admin'],
             },
         ],
         footerAction: {

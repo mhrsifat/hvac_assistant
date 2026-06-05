@@ -15,15 +15,9 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])
         Route::patch('{hvacModel}', 'update')->name('update');
         Route::delete('{hvacModel}', 'destroy')->name('destroy');
 
-        Route::post('{hvacModel}/documents', 'storeDocument')
-            ->name('documents.store');
+        Route::post('{hvacModel}/documents', 'storeDocument')->name('documents.store');
+        Route::delete('{hvacModel}/documents/{document}', 'destroyDocument')->name('documents.destroy');
 
-        Route::delete('{hvacModel}/documents/{document}', 'destroyDocument')
-            ->name('documents.destroy');
-
-        Route::post('{hvacModel}/error-codes', 'storeErrorCode')
-            ->name('error-codes.store');
-
-        Route::delete('{hvacModel}/error-codes/{errorCode}', 'destroyErrorCode')
-            ->name('error-codes.destroy');
+        Route::post('{hvacModel}/error-codes', 'storeErrorCode')->name('error-codes.store');
+        Route::delete('{hvacModel}/error-codes/{errorCode}', 'destroyErrorCode')->name('error-codes.destroy');
     });

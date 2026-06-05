@@ -107,7 +107,9 @@ class HvacModelController extends Controller
     {
         $this->hvacModelService->delete($hvacModel);
 
-        return back()->with('success', 'HVAC model deleted successfully.');
+        return redirect()
+            ->route('hvac-models.index')
+            ->with('success', 'HVAC model deleted successfully.');
     }
 
     public function storeDocument(Request $request, HvacModel $hvacModel): RedirectResponse

@@ -1,10 +1,10 @@
-import { configureEcho, echo, useConnectionStatus, useEcho } from '@laravel/echo-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout';
+import { configureEcho, echo, useConnectionStatus, useEcho } from '@laravel/echo-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type ConversationUpdatedPayload = {
   chat_id: number;
@@ -187,6 +187,7 @@ export default function ChatBroadcastTester() {
 
       if (status.connectionStatus === 'connected') {
         appendLog('success', 'Echo connected.', `Socket ID: ${status.socketId}`);
+
         return;
       }
 
@@ -202,11 +203,13 @@ export default function ChatBroadcastTester() {
 
       if (status.connectionStatus === 'reconnecting') {
         appendLog('info', 'Echo reconnecting.', `Socket ID: ${status.socketId}`);
+
         return;
       }
 
       if (status.connectionStatus === 'disconnected') {
         appendLog('error', 'Echo disconnected.', `Socket ID: ${status.socketId}`);
+
         return;
       }
 
@@ -298,9 +301,11 @@ export default function ChatBroadcastTester() {
       }
 
       setConversationId(String(payload.chat.id));
+
       if (payload.chat?.user?.username) {
         setUsername(payload.chat.user.username);
       }
+
       appendLog('success', 'Chat created.', JSON.stringify(payload));
     } catch (error) {
       appendLog('error', 'Create chat request crashed.', String(error));

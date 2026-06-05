@@ -78,6 +78,7 @@ export default function Sidebar({
 
     useEffect(() => {
         const savedScrollPos = sessionStorage.getItem('admin.sidebarScrollPos');
+
         if (savedScrollPos && scrollContainerRef.current) {
             scrollContainerRef.current.scrollTop = parseInt(savedScrollPos, 10);
         }

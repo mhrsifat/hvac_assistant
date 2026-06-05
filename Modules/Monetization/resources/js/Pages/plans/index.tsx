@@ -14,7 +14,8 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { destroy as destroyPlan, store as storePlan, update as updatePlan } from '@/routes/plans';
 import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { FormEvent, useEffect, useState } from 'react';
+import type { FormEvent} from 'react';
+import { useEffect, useState } from 'react';
 
 // Added 'slug' to the Plan type
 type Plan = {
@@ -175,6 +176,7 @@ export default function PlansIndex() {
     if (editingPlan) {
       // Changed to use slug for routing update
       planForm.patch(updatePlan.url(editingPlan.slug), visitOptions);
+
       return;
     }
 

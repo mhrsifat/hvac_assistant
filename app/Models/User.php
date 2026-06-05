@@ -35,8 +35,8 @@ class User extends Authenticatable implements JWTSubject
         'state',
         'city',
         'zip_code',
-        // 'stripe_customer_id',
         'avatar',
+        'email_verified_at',
         'terms_and_conditions',
         'status',
     ];

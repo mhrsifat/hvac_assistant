@@ -33,6 +33,25 @@ class ChatManagementController extends Controller
         ]);
     }
 
+    public function show(Chat $chat): Response
+    {
+        $chat->load([
+            'user:id,first_name,last_name,email',
+            'hvacModel:id,name,model_number,brand_id',
+            'hvacModel.brand:id,name,logo_path',
+        ]);
+        $chat->loadCount('messages');
+
+        return Inertia::render('chats/show', [
+            'chat' => $chat,
+            'messages' => Inertia::defer(fn () => $chat
+                ->messages()
+                ->with('sender:id,first_name,last_name,email')
+                ->oldest()
+                ->get()),
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -65,6 +84,8 @@ class ChatManagementController extends Controller
     {
         $this->chatManagementService->delete($chat);
 
-        return back()->with('success', 'Chat deleted successfully.');
+        return redirect()
+            ->route('chats.index')
+            ->with('success', 'Chat deleted successfully.');
     }
 }
