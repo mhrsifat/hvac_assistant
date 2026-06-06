@@ -14,6 +14,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('hvac_model_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('slug')->unique();
             $table->string('title');
             $table->string('status')->default('active');
             $table->timestamps();

@@ -18,8 +18,8 @@ services:
     container_name: pgadmin4_ui
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@hvac.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: admin@hvacassistant.tech
+      PGADMIN_DEFAULT_PASSWORD: password
     ports:
       - '5050:80'
     depends_on:
@@ -27,4 +27,3 @@ services:
 
 volumes:
   pg_vector_data:
-  

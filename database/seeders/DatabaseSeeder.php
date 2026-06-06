@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             MonetizationDatabaseSeeder::class,
+            BrandSeeder::class,
+            HvacModelSeeder::class,
         ]);
     }
 }

@@ -28,3 +28,11 @@ When generating code to process documents into the vector database, you MUST fol
 4. **Chunking with Overlap:** Split the cleaned text into logical, overlapping chunks (e.g., 1000 characters with a 200-character overlap) so that contextual meaning is not lost between cuts.
 5. **Embedding:** Send each text chunk to the Embedding model (via Laravel AI SDK or OpenAI API) to generate the vector array.
 6. **Storage:** Insert the chunk's text into the `content` column and its vector array into the `embedding` column of the `manual_vectors` table using the `pgsql_vector` connection. Add sleep delays (e.g., `usleep(200000)`) inside loops to prevent rate-limiting from the AI provider.
+
+## Slug Generation Rule (Laravel Sluggable)
+- All models requiring slug generation MUST follow the standard sluggable rules, conventions, and attributes.
+- Refer to [SLUG_INSTRUCTIONS.md](file:///d:/Sifat/RunningProject/maboydem/SLUG_INSTRUCTIONS.md) for setup instructions, configuration options (like `from`, `to`, `scope`, uniqueness constraints), error key handling, and pipeline transliteration examples.
+
+## Laravel AI SDK
+- For AI agent features, prompt structures, streaming, tool usage, similarity search, structured outputs, or queueing configurations, follow the SDK documentation guidelines.
+- Refer to [LARAVEL_AI_SDK.md](file:///d:/Sifat/RunningProject/maboydem/LARAVEL_AI_SDK.md) for detailed configuration, setup, agent implementation, and embedding search queries.

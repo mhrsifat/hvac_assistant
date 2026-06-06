@@ -21,13 +21,13 @@ class HvacModelDetailResource extends JsonResource
             ],
             'name' => $this->name,
             'model_number' => $this->model_number,
-            'capacity_btu' => $this->capacity_btu,
+            'capacity_btu' => (string) $this->capacity_btu,
             'efficiency_rating' => $this->efficiency_rating,
             'power_spec' => $this->power_spec,
             'refrigerant_type' => $this->refrigerant_type,
             'image_path' => $this->image_path,
-            'created_at' => $this->created_at?->toIso8601String(),
-            'updated_at' => $this->updated_at?->toIso8601String(),
+            // 'created_at' => $this->created_at?->toIso8601String(),
+            // 'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

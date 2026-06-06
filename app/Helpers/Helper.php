@@ -31,16 +31,16 @@ class Helper
     /**
      * Delete an image and return a boolean.
      *
-     * @param  string  $imageUrl
+     * @param  string  $fileUrl
      * @return bool
      */
-    public static function deleteFile($imageUrl)
+    public static function deleteFile($fileUrl)
     {
         try {
-            // Check if $imageUrl is a valid string
-            if (is_string($imageUrl) && ! empty($imageUrl)) {
+            // Check if $fileUrl is a valid string
+            if (is_string($fileUrl) && ! empty($fileUrl)) {
                 // Extract the relative path from the URL
-                $parsedUrl = parse_url($imageUrl);
+                $parsedUrl = parse_url($fileUrl);
                 $relativePath = $parsedUrl['path'] ?? '';
 
                 // Remove the leading '/storage/' from the path
@@ -57,7 +57,7 @@ class Helper
                     return false;
                 }
             } else {
-                // Return false if $imageUrl is not a valid string
+                // Return false if $fileUrl is not a valid string
                 return false;
             }
         } catch (Exception $e) {

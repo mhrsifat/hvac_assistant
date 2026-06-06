@@ -115,10 +115,22 @@ class User extends Authenticatable implements JWTSubject
         return (string) ($this->username ?? $this->email ?? '');
     }
 
-    public function getAvatarAttribute(mixed $value): ?string
+    public function getAvatarAttribute(mixed $value): string
     {
-        if (empty($value)) {
-            return null;
+        if (blank($value)) {
+            $name = $this->name ?? ($this->username ?? 'NA');
+
+            $initials = collect(explode(' ', $name))
+                ->filter()
+                ->map(fn ($word) => strtoupper(substr($word, 0, 1)))
+                ->take(2)
+                ->implode('');
+
+            $colors = ['FF6B6B', '4ECDC4', '1A535C', 'FF9F1C', '2EC4B6'];
+
+            $color = $colors[crc32($name) % count($colors)];
+
+            return "https://ui-avatars.com/api/?name={$initials}&background={$color}&color=fff&size=256";
         }
 
         return asset('storage/'.$value);

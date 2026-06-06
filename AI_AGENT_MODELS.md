@@ -32,6 +32,7 @@ Use the real database columns exactly as they exist in the migrations. Do not gu
 
 - `user_id`: the technician or user who owns the chat.
 - `hvac_model_id`: optional HVAC model being discussed.
+- `slug`: chat slug.
 - `title`: short chat title shown in the UI.
 - `status`: chat state such as active or closed.
 

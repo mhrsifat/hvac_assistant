@@ -31,14 +31,16 @@ trait ApiResponse
      * @param  int  $code  The HTTP status code.
      * @param  string|null  $message  An optional error message.
      * @param  mixed  $error  The error details.
+     * @param  string|null  $redirectTo  The URL to redirect to.
      */
-    public function error($code = 500, $message = null, $error = []): JsonResponse
+    public function error($code = 500, $message = null, $error = [], ?string $redirectTo = ''): JsonResponse
     {
         return response()->json([
             'success' => false,
             'code' => (int) $code,
             'message' => $message,
             'error' => $error,
+            'redirectTo' => (string) $redirectTo ?? '',
             'timestamp' => now()->toIso8601String().' GMT'.now()->format('P'),
         ], $code);
     }
