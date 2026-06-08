@@ -42,6 +42,8 @@ class GenerateAiResponseJob implements ShouldQueue
             return;
         }
 
+        $username = (string) ($chat->user?->username ?? '');
+
         $userMessage = ChatMessage::find($this->messageId);
         if (! $userMessage) {
             return;
@@ -52,8 +54,13 @@ class GenerateAiResponseJob implements ShouldQueue
 
             // Build attachments if they are images
             $aiAttachments = [];
-            if ($userMessage->attachments) {
-                foreach ($userMessage->attachments as $attachmentUrl) {
+            if ($userMessage->attachments && is_array($userMessage->attachments)) {
+                foreach ($userMessage->attachments as $attachment) {
+                    $attachmentUrl = is_array($attachment) ? ($attachment['url'] ?? '') : $attachment;
+                    if (empty($attachmentUrl)) {
+                        continue;
+                    }
+
                     // Get relative path for Laravel AI SDK Storage
                     $parsedUrl = parse_url($attachmentUrl);
                     $relativePath = $parsedUrl['path'] ?? '';
@@ -85,6 +92,15 @@ class GenerateAiResponseJob implements ShouldQueue
                 'attachments' => null,
             ]);
 
+            // Estimate AI response tokens (e.g. 1 word ≈ 1.3 tokens, min 5 tokens)
+            $aiWordCount = str_word_count((string) $response);
+            $aiTokens = max(5, (int) ($aiWordCount * 1.3));
+            $chat->increment('tokens', $aiTokens);
+
+            if ($chat->tokens >= 500) {
+                $chat->update(['status' => 'limitHit']);
+            }
+
             // Clear cache
             Cache::forget("chat_{$this->chatSlug}_analyzing");
 
@@ -93,15 +109,15 @@ class GenerateAiResponseJob implements ShouldQueue
             $aiMessageResource = new MessageResource($aiMessage);
 
             // Fire events
-            broadcast(new ChatStatusUpdated($this->chatSlug, false));
+            broadcast(new ChatStatusUpdated($username, $this->chatSlug, false));
 
             // We resolve the resource to array because broadcast needs a primitive/array
-            broadcast(new NewMessageReceived($this->chatSlug, json_decode($aiMessageResource->toJson(), true)));
+            broadcast(new NewMessageReceived($username, $this->chatSlug, json_decode($aiMessageResource->toJson(), true)));
 
         } catch (\Exception $e) {
             Log::error('AI Response generation failed: '.$e->getMessage());
             Cache::forget("chat_{$this->chatSlug}_analyzing");
-            broadcast(new ChatStatusUpdated($this->chatSlug, false));
+            broadcast(new ChatStatusUpdated($username, $this->chatSlug, false));
         }
     }
 }

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('hvac_model_id')->nullable()->constrained()->nullOnDelete();
             $table->string('slug')->unique();
             $table->string('title');
+            $table->unsignedInteger('tokens')->default(0);
             $table->string('status')->default('active');
             $table->timestamps();
         });

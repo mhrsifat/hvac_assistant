@@ -1,0 +1,33 @@
+# Update the package repository information
+sudo apt-get update
+
+# Install Supervisor package automatically
+sudo apt-get install supervisor -y
+
+# Start the Supervisor service immediately
+sudo systemctl start supervisor
+
+# Enable Supervisor to automatically start on system boot
+sudo systemctl enable supervisor
+
+# Check the current status of the Supervisor service
+sudo systemctl status supervisor
+
+# Create the symlink
+sudo ln -s /home/hvacassistant-admin/htdocs/admin.hvacassistant.tech/supervisor/master.conf /etc/supervisor/conf.d/master.conf
+
+# Read and apply the new configuration
+sudo supervisorctl reread
+sudo supervisorctl update
+
+# Start all services in the group
+sudo supervisorctl start laravel-services:*
+
+
+
+# Check 
+# Check the status of the services
+sudo supervisorctl status
+
+# Restart all services in the group
+sudo supervisorctl restart laravel-services:*

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->unsignedBigInteger('chat_id')->index();
             $table->foreignId('sender_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('sender_role');
-            $table->text('content');
+            $table->text('content')->nullable();
             $table->json('attachments')->nullable();
             $table->timestamps();
         });

@@ -21,11 +21,10 @@ class MessageResource extends JsonResource
         return [
             'id' => (string) $this->id,
             'sender_role' => $this->sender_role,
-            'is_analyzing' => $chatSlug ? Cache::get("chat_{$chatSlug}_analyzing", false) : false,
             'type' => $type,
             'content' => $this->content,
-            'attachments' => $this->attachments, // Extracted securely via ChatMessage accessor
-            'status' => 'sent', // Constant for now as per demo, could be dynamic later
+            'attachments' => $this->attachments ?? [], 
+            'status' => 'sent',
             'created_at' => $this->created_at,
         ];
     }

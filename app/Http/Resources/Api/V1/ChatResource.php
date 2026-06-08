@@ -15,9 +15,11 @@ class ChatResource extends JsonResource
         return [
             'slug' => $this->slug,
             'title' => $this->title,
+            'last_msg' => $this->relationLoaded('latestMessage')
+                ? $this->latestMessage?->content
+                : $this->messages()->latest()->first()?->content,
             'status' => $this->status,
-            'hvac_model' => new HvacModelResource($this->whenLoaded('hvacModel')),
-            'created_at' => $this->created_at,
+            'date' => $this->created_at?->format('Y-m-d'),
         ];
     }
 }

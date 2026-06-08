@@ -13,6 +13,8 @@ class ChatMessage extends Model
 
     protected $connection = 'mysql';
 
+    protected $touches = ['chat'];
+
     protected $fillable = [
         'chat_id',
         'sender_id',
@@ -28,7 +30,7 @@ class ChatMessage extends Model
         ];
     }
 
-    // accesor to return attachments as full URLs
+    // accessor to return attachments as full URLs
     public function getAttachmentsAttribute(?string $value): ?array
     {
         if (blank($value)) {
@@ -36,10 +38,23 @@ class ChatMessage extends Model
         }
         $attachments = json_decode($value, true);
 
+        if (! is_array($attachments)) {
+            return null;
+        }
+
         foreach ($attachments as $key => $attachment) {
-            $attachments[$key] = filter_var($attachment, FILTER_VALIDATE_URL)
-                ? $attachment
-                : Storage::url($attachment);
+            if (is_array($attachment)) {
+                if (isset($attachment['url'])) {
+                    $url = $attachment['url'];
+                    $attachments[$key]['url'] = filter_var($url, FILTER_VALIDATE_URL)
+                        ? $url
+                        : Storage::url($url);
+                }
+            } else {
+                $attachments[$key] = filter_var($attachment, FILTER_VALIDATE_URL)
+                    ? $attachment
+                    : Storage::url($attachment);
+            }
         }
 
         return $attachments;

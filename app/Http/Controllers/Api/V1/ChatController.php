@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\SendMessageRequest;
 use App\Services\Api\V1\ChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ChatController extends Controller
 {
@@ -15,14 +16,14 @@ class ChatController extends Controller
 
     public function __construct(protected ChatService $chatService) {}
 
-    public function startChat(Request $request, $hvac_model_slug): JsonResponse
+    public function startChat(Request $request, string $hvac_model_slug): JsonResponse
     {
         try {
             $chat = $this->chatService->startChat($request->user(), $hvac_model_slug);
 
-            return $this->successResponse($chat, 'Chat started successfully.', 201);
+            return $this->success(201, 'Chat started successfully.', $chat);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->error(500, $e->getMessage());
         }
     }
 
@@ -31,54 +32,60 @@ class ChatController extends Controller
         try {
             $chats = $this->chatService->listChats($request->user(), $request);
 
-            return $this->successResponse($chats, 'Chats retrieved successfully.');
+            return $this->success(200, 'Chats retrieved successfully.', $chats);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->error(500, $e->getMessage());
         }
     }
 
-    public function sendMessage(SendMessageRequest $request, $chat_slug): JsonResponse
+    public function sendMessage(SendMessageRequest $request, string $chat_slug): JsonResponse
     {
         try {
             $message = $this->chatService->sendMessage($request->user(), $chat_slug, $request);
 
-            return $this->successResponse($message, 'Message sent successfully.', 201);
+            return $this->success(201, 'Message sent successfully.', $message);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->error(500, $e->getMessage());
         }
     }
 
-    public function getMessages(Request $request, $chat_slug): JsonResponse
+    public function getMessages(Request $request, string $chat_slug): JsonResponse
     {
         try {
             $messages = $this->chatService->getMessages($request->user(), $chat_slug, $request);
 
-            // Reconstruct the pagination data from the resource collection using the standard approach
-            $data = $messages->response()->getData(true);
-
-            return response()->json([
-                'success' => true,
-                'code' => 200,
-                'message' => 'Messages retrieved successfully.',
-                'data' => $data['data'],
-                'links' => $data['links'] ?? null,
-                'meta' => $data['meta'] ?? null,
-                'is_analyzing' => $data['is_analyzing'] ?? false,
-            ], 200);
+            return $this->success(200, 'Messages retrieved successfully.', $messages);
 
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->error(500, $e->getMessage());
         }
     }
 
-    public function deleteChat(Request $request, $chat_slug): JsonResponse
+    public function deleteChat(Request $request, string $chat_slug): JsonResponse
     {
         try {
             $this->chatService->deleteChat($request->user(), $chat_slug);
 
-            return $this->successResponse(null, 'Chat deleted successfully.', 204);
+            return $this->success(200, 'Chat deleted successfully.', []);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->error(500, $e->getMessage());
+        }
+    }
+
+    public function renameChat(Request $request, string $chat_slug): JsonResponse
+    {
+        try {
+            $request->validate([
+                'title' => ['required', 'string', 'max:255'],
+            ]);
+
+            $chat = $this->chatService->renameChat($request->user(), $chat_slug, $request->title);
+
+            return $this->success(200, 'Chat renamed successfully.', $chat);
+        } catch (ValidationException $e) {
+            return $this->validationError($e);
+        } catch (\Exception $e) {
+            return $this->error(500, $e->getMessage());
         }
     }
 }

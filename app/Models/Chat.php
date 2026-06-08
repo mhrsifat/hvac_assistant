@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 use NunoMaduro\LaravelSluggable\Attributes\Sluggable;
 
@@ -22,6 +23,7 @@ class Chat extends Model
         'slug',
         'title',
         'status',
+        'tokens',
     ];
 
     protected static function booted(): void
@@ -46,6 +48,11 @@ class Chat extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ChatMessage::class);
+    }
+
+    public function latestMessage(): HasOne
+    {
+        return $this->hasOne(ChatMessage::class)->latestOfMany();
     }
 
     public function repairReports(): HasMany

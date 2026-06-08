@@ -58,23 +58,48 @@ function ChannelListener({
   channelName,
   onEvent,
   onStatus,
+  appendLog,
 }: {
   channelName: string;
-  onEvent: (payload: ConversationUpdatedPayload) => void;
+  onEvent: (payload: any, eventName: string) => void;
   onStatus: (status: ListenerStatus) => void;
+  appendLog: (type: LogEntry['type'], message: string, details?: string) => void;
 }) {
   const connectionStatus = useConnectionStatus();
   const lastStatusRef = useRef<string>('');
 
-  useEcho<ConversationUpdatedPayload>(
-    channelName,
-    '.ConversationUpdated',
-    (payload) => {
-      onEvent(payload);
-    },
-    [channelName],
-    'private',
-  );
+  useEffect(() => {
+    if (!channelName) return;
+
+    appendLog('info', 'Attempting to subscribe...', channelName);
+
+    const channel = echo().private(channelName);
+
+    channel.subscribed(() => {
+      appendLog('success', 'Subscription confirmed by Reverb.', channelName);
+    });
+
+    channel.error((error: any) => {
+      appendLog('error', 'Subscription failed.', JSON.stringify(error));
+    });
+
+    channel.listen('.App\\Events\\NewMessageReceived', (payload: any) => {
+      onEvent(payload, 'NewMessageReceived');
+    });
+
+    channel.listen('.App\\Events\\ChatTitleUpdated', (payload: any) => {
+      onEvent(payload, 'ChatTitleUpdated');
+    });
+
+    channel.listen('.App\\Events\\ChatStatusUpdated', (payload: any) => {
+      onEvent(payload, 'ChatStatusUpdated');
+    });
+
+    return () => {
+      echo().leave(channelName);
+      appendLog('info', 'Left channel.', channelName);
+    };
+  }, [channelName, appendLog, onEvent]);
 
   useEffect(() => {
     const socketId = echo().socketId() ?? 'not connected';
@@ -136,12 +161,6 @@ export default function ChatBroadcastTester() {
   );
   const [bearerToken, setBearerToken] = useState('');
   const [broadcastAuthEndpoint, setBroadcastAuthEndpoint] = useState('/api/broadcasting/auth');
-  const [apiBaseUrl, setApiBaseUrl] = useState(
-    typeof window !== 'undefined' ? window.location.origin : '',
-  );
-  const [conversationTitle, setConversationTitle] = useState('Reverb Tester Chat');
-  const [conversationId, setConversationId] = useState('1');
-  const [messageContent, setMessageContent] = useState('test from reverb tester');
   const [isConfigured, setIsConfigured] = useState(false);
   const [subscribedChannel, setSubscribedChannel] = useState('');
   const [listenerStatus, setListenerStatus] = useState<ListenerStatus>({
@@ -154,7 +173,6 @@ export default function ChatBroadcastTester() {
   const connectionFailureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLoggedStatusRef = useRef<string>('');
 
-  const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '');
   const privateChannelName = username.trim() ? `user.${username.trim()}` : '';
 
   const appendLog = (
@@ -278,81 +296,8 @@ export default function ChatBroadcastTester() {
     appendLog('info', 'Echo disconnected.');
   };
 
-  const createChat = async (): Promise<void> => {
-    try {
-      const response = await fetch(`${normalizedApiBaseUrl}/api/chats`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          title: conversationTitle,
-        }),
-      });
-
-      const payload = (await response.json()) as ChatCreateResponse;
-
-      if (!response.ok) {
-        appendLog('error', 'Create chat request failed.', JSON.stringify(payload));
-
-        return;
-      }
-
-      setConversationId(String(payload.chat.id));
-
-      if (payload.chat?.user?.username) {
-        setUsername(payload.chat.user.username);
-      }
-
-      appendLog('success', 'Chat created.', JSON.stringify(payload));
-    } catch (error) {
-      appendLog('error', 'Create chat request crashed.', String(error));
-    }
-  };
-
-  const sendMessage = async (): Promise<void> => {
-    const parsedConversationId = Number(conversationId);
-
-    if (!parsedConversationId) {
-      appendLog('error', 'Conversation ID is required.');
-
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${normalizedApiBaseUrl}/api/chats/${parsedConversationId}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({
-            content: messageContent,
-          }),
-        },
-      );
-
-      const payload = await response.json();
-
-      if (!response.ok) {
-        appendLog('error', 'Message API request failed.', JSON.stringify(payload));
-
-        return;
-      }
-
-      appendLog('success', 'Message API completed.', JSON.stringify(payload));
-    } catch (error) {
-      appendLog('error', 'Message API request crashed.', String(error));
-    }
-  };
-
-  const handleEvent = (payload: ConversationUpdatedPayload): void => {
-    appendLog('event', 'ConversationUpdated event received.', JSON.stringify(payload));
+  const handleEvent = (payload: any, eventName: string): void => {
+    appendLog('event', `${eventName} received.`, JSON.stringify(payload));
   };
 
   return (
@@ -447,47 +392,14 @@ export default function ChatBroadcastTester() {
 
           <Card className="border-gray-200 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-gray-900/80">
             <CardHeader>
-              <CardTitle>Trigger Event + Logs</CardTitle>
+              <CardTitle>Live Logs</CardTitle>
               <CardDescription>
-                Send a message API request and verify that events are received.
+                Monitor incoming WebSocket events and connection status in real-time.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="api-base-url">API Base URL</Label>
-                <Input id="api-base-url" value={apiBaseUrl} onChange={(event) => setApiBaseUrl(event.target.value)} />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="conversation-title">Conversation Title</Label>
-                  <Input id="conversation-title" value={conversationTitle} onChange={(event) => setConversationTitle(event.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="conversation-id">Conversation ID</Label>
-                  <Input id="conversation-id" value={conversationId} onChange={(event) => setConversationId(event.target.value)} placeholder="e.g. 1" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message-content">Message Content</Label>
-                <textarea
-                  id="message-content"
-                  value={messageContent}
-                  onChange={(event) => setMessageContent(event.target.value)}
-                  rows={4}
-                  className="flex min-h-24 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm shadow-sm outline-none transition focus:border-gray-400 dark:border-gray-700 dark:text-gray-100"
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button type="button" onClick={sendMessage}>
-                  Send Message API
-                </Button>
-                <Button type="button" variant="secondary" onClick={createChat}>
-                  Create Chat API
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setLogs([])}>
+              <div className="flex justify-end">
+                <Button type="button" variant="outline" size="sm" onClick={() => setLogs([])}>
                   Clear Logs
                 </Button>
               </div>
@@ -522,6 +434,7 @@ export default function ChatBroadcastTester() {
             channelName={subscribedChannel}
             onEvent={handleEvent}
             onStatus={handleStatusChange}
+            appendLog={appendLog}
           />
         ) : null}
 
