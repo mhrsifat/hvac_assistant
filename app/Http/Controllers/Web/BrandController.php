@@ -151,25 +151,17 @@ class BrandController extends Controller
             return back()->with('success', 'Document already fed to AI.');
         }
 
-        try {
-            $this->supportDocumentService->feedBrandDocumentToAi($brand, $document);
-            $document->forceFill([
-                'ai_fed' => true,
-                'ai_feed_error' => null,
-            ])->save();
-
-            return back()->with('success', 'Document fed to AI successfully.');
-        } catch (Throwable $exception) {
-            $document->forceFill([
-                'ai_fed' => false,
-                'ai_feed_error' => [
-                    'message' => $exception->getMessage(),
-                    'type' => $exception::class,
-                ],
-            ])->save();
-
-            return back()->with('error', 'AI feed failed. Please try again.');
+        if ($document->is_processing) {
+            return back()->with('success', 'Document is already processing.');
         }
+
+        $document->forceFill([
+            'is_processing' => true,
+        ])->save();
+
+        \App\Jobs\FeedDocumentToAiJob::dispatch($document);
+
+        return back()->with('success', 'Document is being fed to AI in the background. This may take a few moments.');
     }
 
     public function storeErrorCode(Request $request, Brand $brand): RedirectResponse
@@ -180,7 +172,7 @@ class BrandController extends Controller
             'resolution_steps' => ['required', 'string'],
         ]);
 
-        $brand->errorCodes()->create([
+        $errorCode = $brand->errorCodes()->create([
             'brand_id' => $brand->id,
             'hvac_model_id' => null,
             'code' => $validated['code'],
@@ -188,7 +180,9 @@ class BrandController extends Controller
             'resolution_steps' => $validated['resolution_steps'],
         ]);
 
-        return back()->with('success', 'Brand error code added successfully.');
+        \App\Jobs\EmbedErrorCodeJob::dispatch($errorCode);
+
+        return back()->with('success', 'Brand error code added and sent to AI successfully.');
     }
 
     public function destroyErrorCode(Brand $brand, ErrorCode $errorCode): RedirectResponse

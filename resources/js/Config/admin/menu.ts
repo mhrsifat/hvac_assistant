@@ -295,10 +295,10 @@ export const adminMenuSections: AdminMenuSection[] = [
                     },
                 ],
             },
-        ],
+        ],        
         footerAction: {
             label: 'View all Models',
-            href: dashboard(),
+            href: '/hvac-models',
         },
     },
 ];

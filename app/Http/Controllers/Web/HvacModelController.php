@@ -138,6 +138,29 @@ class HvacModelController extends Controller
         return back()->with('success', 'Model document deleted successfully.');
     }
 
+    public function feedDocument(HvacModel $hvacModel, SupportDocument $document): RedirectResponse
+    {
+        if ($document->hvac_model_id !== $hvacModel->id) {
+            abort(404);
+        }
+
+        if ($document->ai_fed && empty($document->ai_feed_error)) {
+            return back()->with('success', 'Document already fed to AI.');
+        }
+
+        if ($document->is_processing) {
+            return back()->with('success', 'Document is already processing.');
+        }
+
+        $document->forceFill([
+            'is_processing' => true,
+        ])->save();
+
+        \App\Jobs\FeedDocumentToAiJob::dispatch($document);
+
+        return back()->with('success', 'Document is being fed to AI in the background. This may take a few moments.');
+    }
+
     public function storeErrorCode(Request $request, HvacModel $hvacModel): RedirectResponse
     {
         $validated = $request->validate([
@@ -146,7 +169,7 @@ class HvacModelController extends Controller
             'resolution_steps' => ['required', 'string'],
         ]);
 
-        $hvacModel->errorCodes()->create([
+        $errorCode = $hvacModel->errorCodes()->create([
             'brand_id' => $hvacModel->brand_id,
             'hvac_model_id' => $hvacModel->id,
             'code' => $validated['code'],
@@ -154,7 +177,9 @@ class HvacModelController extends Controller
             'resolution_steps' => $validated['resolution_steps'],
         ]);
 
-        return back()->with('success', 'Model error code added successfully.');
+        \App\Jobs\EmbedErrorCodeJob::dispatch($errorCode);
+
+        return back()->with('success', 'Model error code added and sent to AI successfully.');
     }
 
     public function destroyErrorCode(HvacModel $hvacModel, ErrorCode $errorCode): RedirectResponse

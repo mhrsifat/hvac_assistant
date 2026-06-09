@@ -10,7 +10,7 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Tools\SimilaritySearch;
-use Modules\Vector\app\Models\ManualVector;
+use Modules\Vector\Models\ManualVector;
 use Stringable;
 
 class HvacAssistantAgent implements Agent, Conversational, HasTools

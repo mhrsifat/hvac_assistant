@@ -45,7 +45,7 @@ class ChatController extends Controller
 
             return $this->success(201, 'Message sent successfully.', $message);
         } catch (\Exception $e) {
-            return $this->error(500, $e->getMessage());
+            return $this->error(500, $e->getMessage(), [], 'message');
         }
     }
 

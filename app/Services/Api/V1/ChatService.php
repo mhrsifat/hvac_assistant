@@ -13,7 +13,6 @@ use App\Models\ChatMessage;
 use App\Models\HvacModel;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 use function Laravel\Ai\agent;
 
@@ -77,6 +76,10 @@ class ChatService
             throw new \Exception('Token limit reached for this chat.');
         }
 
+        if (Cache::get("chat_{$chatSlug}_analyzing", false)) {
+            throw new \Exception('Please wait until the current message is processed.');
+        }
+
         $isFirstMessage = ! $chat->messages()->exists();
 
         $attachmentsData = [];
@@ -87,7 +90,7 @@ class ChatService
 
                 // Format matching Demo structure
                 $attachmentsData[] = [
-                    'url' => Storage::url($path),
+                    'url' => $path,
                     'mimeType' => $file->getMimeType(),
                     'name' => $file->getClientOriginalName(),
                     'size' => $file->getSize(),
@@ -133,7 +136,7 @@ class ChatService
                     broadcast(new ChatTitleUpdated($user->username, $chatSlug, $newTitle));
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to generate chat title with AI: ' . $e->getMessage());
+                Log::error('Failed to generate chat title with AI: '.$e->getMessage());
             }
         }
 

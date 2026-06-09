@@ -7,6 +7,8 @@ import AdminSettingsLayout from '@/layouts/settings/admin-settings-layout';
 import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ConfirmSaveDialog } from '@/components/confirm-save-dialog';
 
 type AppleSettings = {
   apple_private_key_path: string;
@@ -21,6 +23,14 @@ type AppleSettingsPageProps = {
 };
 
 export default function Apple({ apple }: AppleSettingsPageProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const submitRef = useRef<HTMLButtonElement>(null);
+
+  const handleConfirm = () => {
+    setIsModalOpen(false);
+    submitRef.current?.click();
+  };
+
   return (
     <AdminSettingsLayout title="Apple settings">
       <Head title="Apple settings" />
@@ -60,7 +70,7 @@ export default function Apple({ apple }: AppleSettingsPageProps) {
                   accept=".p8,text/plain"
                   className="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-zinc-100"
                 />
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">Upload Apple private key (.p8). Existing path: <span className="font-medium">{apple.apple_private_key_path || 'Not set'}</span></p>
+                {/* <p className="text-sm text-zinc-500 dark:text-zinc-400">Upload Apple private key (.p8). Existing path: <span className="font-medium">{apple.apple_private_key_path || 'Not set'}</span></p> */}
                 <InputError message={errors.APPLE_PRIVATE_KEY_FILE} />
               </div>
 
@@ -78,7 +88,13 @@ export default function Apple({ apple }: AppleSettingsPageProps) {
               </div>
 
               <div className="flex items-center gap-4 border-t border-zinc-100 pt-4 dark:border-zinc-900">
-                <Button disabled={processing} className="h-10 px-6 shadow-sm">
+                <button type="submit" ref={submitRef} className="hidden" />
+                <Button 
+                  type="button" 
+                  disabled={processing} 
+                  className="h-10 px-6 shadow-sm"
+                  onClick={() => setIsModalOpen(true)}
+                >
                   {processing ? 'Saving...' : 'Save Apple settings'}
                 </Button>
 
@@ -99,6 +115,12 @@ export default function Apple({ apple }: AppleSettingsPageProps) {
           )}
         </Form>
       </div>
+
+      <ConfirmSaveDialog
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onConfirm={handleConfirm}
+      />
     </AdminSettingsLayout>
   );
 }

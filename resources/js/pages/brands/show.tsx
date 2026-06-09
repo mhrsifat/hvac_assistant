@@ -1,6 +1,6 @@
-import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Eye, Plus, Sparkles, Trash2, Upload, X, AlertCircle, FileText } from 'lucide-react';
-import type { FormEvent} from 'react';
+import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ type SupportDocument = {
   file_size: number;
   created_at: string;
   ai_fed: boolean;
+  is_processing?: boolean;
   ai_feed_error: { message?: string; type?: string } | null;
 };
 
@@ -78,8 +79,8 @@ type BrandShowProps = {
 
 const formatFileSize = (size: number): string => {
   if (!Number.isFinite(size) || size <= 0) {
-return '0 B';
-}
+    return '0 B';
+  }
 
   const units = ['B', 'KB', 'MB', 'GB'];
   let index = 0;
@@ -133,16 +134,30 @@ export default function BrandShow() {
     setShowError(Boolean(flash?.error));
   }, [flash?.error]);
 
+  // 100% Seamless Silent Polling Every 5 Seconds (No WebSockets)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.reload({
+        only: ['documents'], // Only reloading documents to save bandwidth
+        preserveState: true,
+        preserveScroll: true,
+        showProgress: false, // Prevents the blue loading bar at the top
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Drag & drop handlers
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (e.type === 'dragenter' || e.type === 'dragover') {
-setDragActive(true);
-} else if (e.type === 'dragleave') {
-setDragActive(false);
-}
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
   };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -162,8 +177,8 @@ setDragActive(false);
     }
 
     if (fileInputRef.current) {
-fileInputRef.current.value = '';
-}
+      fileInputRef.current.value = '';
+    }
   };
 
   const submitDocument = (event: FormEvent<HTMLFormElement>) => {
@@ -230,40 +245,46 @@ fileInputRef.current.value = '';
   const openDeleteBrandModal = () => setIsDeleteBrandOpen(true);
   const confirmDeleteBrand = () => router.delete(`/brands/${brand.id}`, { preserveScroll: true, onSuccess: () => setIsDeleteBrandOpen(false) });
   const openDeleteDocumentModal = (doc: SupportDocument) => {
- setDeleteDocumentTarget(doc); setIsDeleteDocumentOpen(true); 
-};
+    setDeleteDocumentTarget(doc); setIsDeleteDocumentOpen(true);
+  };
   const confirmDeleteDocument = () => {
     if (!deleteDocumentTarget) {
-return;
-}
+      return;
+    }
 
-    router.delete(`/brands/${brand.id}/documents/${deleteDocumentTarget.id}`, { preserveScroll: true, onSuccess: () => {
- setIsDeleteDocumentOpen(false); setDeleteDocumentTarget(null); 
-} });
+    router.delete(`/brands/${brand.id}/documents/${deleteDocumentTarget.id}`, {
+      preserveScroll: true, onSuccess: () => {
+        setIsDeleteDocumentOpen(false); setDeleteDocumentTarget(null);
+      }
+    });
   };
   const openFeedModal = (doc: SupportDocument) => {
- setFeedTarget(doc); setIsFeedOpen(true); 
-};
+    setFeedTarget(doc); setIsFeedOpen(true);
+  };
   const confirmFeed = () => {
     if (!feedTarget) {
-return;
-}
+      return;
+    }
 
-    router.post(`/brands/${brand.id}/documents/${feedTarget.id}/feed`, {}, { preserveScroll: true, onSuccess: () => {
- setIsFeedOpen(false); setFeedTarget(null); 
-} });
+    router.post(`/brands/${brand.id}/documents/${feedTarget.id}/feed`, {}, {
+      preserveScroll: true, onSuccess: () => {
+        setIsFeedOpen(false); setFeedTarget(null);
+      }
+    });
   };
   const openDeleteErrorCodeModal = (ec: ErrorCode) => {
- setDeleteErrorCodeTarget(ec); setIsDeleteErrorCodeOpen(true); 
-};
+    setDeleteErrorCodeTarget(ec); setIsDeleteErrorCodeOpen(true);
+  };
   const confirmDeleteErrorCode = () => {
     if (!deleteErrorCodeTarget) {
-return;
-}
+      return;
+    }
 
-    router.delete(`/brands/${brand.id}/error-codes/${deleteErrorCodeTarget.id}`, { preserveScroll: true, onSuccess: () => {
- setIsDeleteErrorCodeOpen(false); setDeleteErrorCodeTarget(null); 
-} });
+    router.delete(`/brands/${brand.id}/error-codes/${deleteErrorCodeTarget.id}`, {
+      preserveScroll: true, onSuccess: () => {
+        setIsDeleteErrorCodeOpen(false); setDeleteErrorCodeTarget(null);
+      }
+    });
   };
 
   return (
@@ -298,12 +319,12 @@ return;
               <div className="flex flex-wrap gap-3">
                 {/* UPLOAD MODAL - Drag & Drop, Compact */}
                 <Dialog open={isDocumentOpen} onOpenChange={(open) => {
- setIsDocumentOpen(open);
+                  setIsDocumentOpen(open);
 
- if (!open) {
-setUploadErrors({});
-} 
-}}>
+                  if (!open) {
+                    setUploadErrors({});
+                  }
+                }}>
                   <DialogTrigger asChild>
                     <Button className="gap-2"><Upload className="h-4 w-4" />Upload document</Button>
                   </DialogTrigger>
@@ -334,8 +355,8 @@ setUploadErrors({});
                               {documentForm.data.documents.length} file(s) selected
                             </label>
                             <Button type="button" variant="ghost" size="sm" onClick={() => {
- documentForm.setData('documents', []); setUploadErrors({}); 
-}} className="h-7 gap-1 text-xs text-red-600">
+                              documentForm.setData('documents', []); setUploadErrors({});
+                            }} className="h-7 gap-1 text-xs text-red-600">
                               <X className="h-3 w-3" />Clear all
                             </Button>
                           </div>
@@ -383,12 +404,12 @@ setUploadErrors({});
 
                 {/* Feed AI modal */}
                 <Dialog open={isFeedOpen} onOpenChange={(open) => {
- setIsFeedOpen(open);
+                  setIsFeedOpen(open);
 
- if (!open) {
-setFeedTarget(null);
-} 
-}}>
+                  if (!open) {
+                    setFeedTarget(null);
+                  }
+                }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Feed document to AI</DialogTitle><DialogDescription>Process document and use AI tokens.</DialogDescription></DialogHeader>
                     <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -411,12 +432,12 @@ setFeedTarget(null);
 
                 {/* Delete document modal */}
                 <Dialog open={isDeleteDocumentOpen} onOpenChange={(open) => {
- setIsDeleteDocumentOpen(open);
+                  setIsDeleteDocumentOpen(open);
 
- if (!open) {
-setDeleteDocumentTarget(null);
-} 
-}}>
+                  if (!open) {
+                    setDeleteDocumentTarget(null);
+                  }
+                }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Delete document</DialogTitle><DialogDescription>Permanently remove document from brand.</DialogDescription></DialogHeader>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{deleteDocumentTarget?.original_name ?? 'Selected document'}</div>
@@ -426,12 +447,12 @@ setDeleteDocumentTarget(null);
 
                 {/* Delete error code modal */}
                 <Dialog open={isDeleteErrorCodeOpen} onOpenChange={(open) => {
- setIsDeleteErrorCodeOpen(open);
+                  setIsDeleteErrorCodeOpen(open);
 
- if (!open) {
-setDeleteErrorCodeTarget(null);
-} 
-}}>
+                  if (!open) {
+                    setDeleteErrorCodeTarget(null);
+                  }
+                }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Delete error code</DialogTitle><DialogDescription>Permanently remove error code entry.</DialogDescription></DialogHeader>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{deleteErrorCodeTarget?.code ?? 'Selected error code'}</div>
@@ -497,66 +518,71 @@ setDeleteErrorCodeTarget(null);
           <Card className="border-0 bg-white/90 shadow-sm">
             <CardHeader><CardTitle className="text-base">Brand documents</CardTitle><CardDescription>Manuals and guidance shared across every model.</CardDescription></CardHeader>
             <CardContent>
-              <Deferred data="documents" fallback={<div className="space-y-3"><div className="h-12 animate-pulse rounded-md bg-slate-200" /><div className="h-12 animate-pulse rounded-md bg-slate-200" /></div>}>
-                {() => (
-                  <div className="space-y-3">
-                    {documents?.length ? documents.map((doc) => (
-                      <div key={doc.id} className="rounded-xl border border-slate-200 bg-white p-4">
-                        {/* Grid: text column + button column */}
-                        <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[1fr_auto]">
-                          {/* Left column: all text info */}
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-slate-900">{doc.original_name}</p>
-                              {doc.ai_fed ? (
-                                <Badge className="bg-emerald-600">Fed to AI</Badge>
-                              ) : doc.ai_feed_error ? (
-                                <Badge variant="destructive">Feed failed</Badge>
-                              ) : (
-                                <Badge variant="secondary">Not fed</Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-slate-500">
-                              {doc.mime_type} - {formatFileSize(doc.file_size)}
-                            </p>
-                            {/* AI feed error with expand/collapse */}
-                            {doc.ai_feed_error?.message && (
-                              <div className="mt-1 text-xs">
-                                {expandedErrorDocId === doc.id ? (
-                                  <div className="rounded bg-rose-50 p-2 text-rose-800">
-                                    <p className="whitespace-pre-wrap break-all">{doc.ai_feed_error.message}</p>
-                                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setExpandedErrorDocId(null)}>Show less</Button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <span className="truncate text-rose-600">
-                                      {doc.ai_feed_error.message.slice(0, 100)}
-                                      {doc.ai_feed_error.message.length > 100 ? '…' : ''}
-                                    </span>
-                                    {doc.ai_feed_error.message.length > 100 && (
-                                      <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setExpandedErrorDocId(doc.id)}>Show full error</Button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+              {documents === undefined ? (
+                <div className="space-y-3">
+                  <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+                  <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {documents?.length ? documents.map((doc) => (
+                    <div key={doc.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                      {/* Grid: text column + button column */}
+                      <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[1fr_auto]">
+                        {/* Left column: all text info */}
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-slate-900">{doc.original_name}</p>
+                            {doc.is_processing ? (
+                              <Badge className="bg-amber-500">Processing...</Badge>
+                            ) : doc.ai_fed ? (
+                              <Badge className="bg-emerald-600">Fed to AI</Badge>
+                            ) : doc.ai_feed_error ? (
+                              <Badge variant="destructive">Feed failed</Badge>
+                            ) : (
+                              <Badge variant="secondary">Not fed</Badge>
                             )}
                           </div>
-                          {/* Right column: action buttons - always at top */}
-                          <div className="flex flex-wrap items-start gap-2 justify-self-end">
-                            <Button asChild variant="outline" size="sm">
-                              <a href={doc.file_path} target="_blank" rel="noreferrer" className="gap-2"><Eye className="h-4 w-4" />View</a>
-                            </Button>
-                            <Button variant="outline" size="sm" className="gap-2" onClick={() => openFeedModal(doc)} disabled={doc.ai_fed && !doc.ai_feed_error}>
-                              <Sparkles className="h-4 w-4" />Feed to AI
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => openDeleteDocumentModal(doc)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
+                          <p className="text-xs text-slate-500">
+                            {doc.mime_type} - {formatFileSize(doc.file_size)}
+                          </p>
+                          {/* AI feed error with expand/collapse */}
+                          {doc.ai_feed_error?.message && (
+                            <div className="mt-1 text-xs">
+                              {expandedErrorDocId === doc.id ? (
+                                <div className="rounded bg-rose-50 p-2 text-rose-800">
+                                  <p className="whitespace-pre-wrap break-all">{doc.ai_feed_error.message}</p>
+                                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setExpandedErrorDocId(null)}>Show less</Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate text-rose-600">
+                                    {doc.ai_feed_error.message.slice(0, 100)}
+                                    {doc.ai_feed_error.message.length > 100 ? '…' : ''}
+                                  </span>
+                                  {doc.ai_feed_error.message.length > 100 && (
+                                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setExpandedErrorDocId(doc.id)}>Show full error</Button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {/* Right column: action buttons - always at top */}
+                        <div className="flex flex-wrap items-start gap-2 justify-self-end">
+                          <Button asChild variant="outline" size="sm">
+                            <a href={doc.file_path} target="_blank" rel="noreferrer" className="gap-2"><Eye className="h-4 w-4" />View</a>
+                          </Button>
+                          <Button variant="outline" size="sm" className="gap-2" onClick={() => openFeedModal(doc)} disabled={(doc.ai_fed && !doc.ai_feed_error) || doc.is_processing}>
+                            <Sparkles className="h-4 w-4" />Feed to AI
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => openDeleteDocumentModal(doc)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
-                    )) : <p className="text-sm text-slate-500">No brand documents uploaded yet.</p>}
-                  </div>
-                )}
-              </Deferred>
+                    </div>
+                  )) : <p className="text-sm text-slate-500">No brand documents uploaded yet.</p>}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -566,21 +592,24 @@ setDeleteErrorCodeTarget(null);
           <Card className="border-0 bg-white/90 shadow-sm">
             <CardHeader><CardTitle className="text-base">Brand error codes</CardTitle><CardDescription>Common errors that apply to all models.</CardDescription></CardHeader>
             <CardContent>
-              <Deferred data="errorCodes" fallback={<div className="space-y-3"><div className="h-16 animate-pulse rounded-md bg-slate-200" /><div className="h-16 animate-pulse rounded-md bg-slate-200" /></div>}>
-                {() => (
-                  <div className="space-y-3">
-                    {errorCodes?.data.length ? errorCodes.data.map((ec) => (
-                      <div key={ec.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="space-y-2"><Badge variant="outline">{ec.code}</Badge><p className="text-sm font-semibold text-slate-900">{ec.description}</p></div>
-                          <Button variant="ghost" size="sm" onClick={() => openDeleteErrorCodeModal(ec)}><Trash2 className="h-4 w-4 text-slate-500" /></Button>
-                        </div>
-                        <p className="mt-3 text-sm text-slate-600">{ec.resolution_steps}</p>
+              {errorCodes === undefined ? (
+                <div className="space-y-3">
+                  <div className="h-16 animate-pulse rounded-md bg-slate-200" />
+                  <div className="h-16 animate-pulse rounded-md bg-slate-200" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {errorCodes?.data.length ? errorCodes.data.map((ec) => (
+                    <div key={ec.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-2"><Badge variant="outline">{ec.code}</Badge><p className="text-sm font-semibold text-slate-900">{ec.description}</p></div>
+                        <Button variant="ghost" size="sm" onClick={() => openDeleteErrorCodeModal(ec)}><Trash2 className="h-4 w-4 text-slate-500" /></Button>
                       </div>
-                    )) : <p className="text-sm text-slate-500">No brand error codes yet.</p>}
-                  </div>
-                )}
-              </Deferred>
+                      <p className="mt-3 text-sm text-slate-600">{ec.resolution_steps}</p>
+                    </div>
+                  )) : <p className="text-sm text-slate-500">No brand error codes yet.</p>}
+                </div>
+              )}
               {errorCodes?.links && errorCodes.links.length > 0 && (
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
                   {errorCodes.links.map((link, idx) => link.url ? <Link key={idx} href={link.url} className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span key={idx} className="rounded-full border border-slate-200 px-3 py-1 text-slate-400" dangerouslySetInnerHTML={{ __html: link.label }} />)}
@@ -594,34 +623,37 @@ setDeleteErrorCodeTarget(null);
         <Card className="border-0 bg-white/90 shadow-sm">
           <CardHeader><CardTitle className="text-base">Models</CardTitle><CardDescription>Model-level manuals and error codes inside each profile.</CardDescription></CardHeader>
           <CardContent>
-            <Deferred data="models" fallback={<div className="space-y-2"><div className="h-12 animate-pulse rounded-md bg-slate-200" /><div className="h-12 animate-pulse rounded-md bg-slate-200" /></div>}>
-              {() => (
-                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                  <table className="min-w-full text-sm">
-                    <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
-                      <tr><th className="px-4 py-3 text-left">Model</th><th className="px-4 py-3 text-left">Model #</th><th className="px-4 py-3 text-left">Docs</th><th className="px-4 py-3 text-left">Errors</th><th className="px-4 py-3 text-left">Action</th></tr>
-                    </thead>
-                    <tbody>
-                      {models?.data.map((model) => (
-                        <tr key={model.id} className="border-b last:border-b-0">
-                          <td className="px-4 py-3"><p className="text-sm font-semibold text-slate-900">{model.name}</p><p className="text-xs text-slate-500">{model.capacity_btu ? `${model.capacity_btu} BTU` : 'Capacity not set'}</p></td>
-                          <td className="px-4 py-3 text-slate-600">{model.model_number ?? '-'}</td>
-                          <td className="px-4 py-3 text-slate-600">{model.documents_count ?? 0}</td>
-                          <td className="px-4 py-3 text-slate-600">{model.error_codes_count ?? 0}</td>
-                          <td className="px-4 py-3"><Button asChild variant="outline" size="sm"><Link href={`/hvac-models/${model.id}`} prefetch className="gap-2"><Eye className="h-4 w-4" />View</Link></Button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {models?.data.length === 0 && <p className="p-4 text-sm text-slate-500">No models found for this brand.</p>}
-                  {models?.links && models.links.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
-                      {models.links.map((link, idx) => link.url ? <Link key={idx} href={link.url} className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span key={idx} className="rounded-full border border-slate-200 px-3 py-1 text-slate-400" dangerouslySetInnerHTML={{ __html: link.label }} />)}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Deferred>
+            {models === undefined ? (
+              <div className="space-y-2">
+                <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+                <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="min-w-full text-sm">
+                  <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
+                    <tr><th className="px-4 py-3 text-left">Model</th><th className="px-4 py-3 text-left">Model #</th><th className="px-4 py-3 text-left">Docs</th><th className="px-4 py-3 text-left">Errors</th><th className="px-4 py-3 text-left">Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {models?.data.map((model) => (
+                      <tr key={model.id} className="border-b last:border-b-0">
+                        <td className="px-4 py-3"><p className="text-sm font-semibold text-slate-900">{model.name}</p><p className="text-xs text-slate-500">{model.capacity_btu ? `${model.capacity_btu} BTU` : 'Capacity not set'}</p></td>
+                        <td className="px-4 py-3 text-slate-600">{model.model_number ?? '-'}</td>
+                        <td className="px-4 py-3 text-slate-600">{model.documents_count ?? 0}</td>
+                        <td className="px-4 py-3 text-slate-600">{model.error_codes_count ?? 0}</td>
+                        <td className="px-4 py-3"><Button asChild variant="outline" size="sm"><Link href={`/hvac-models/${model.id}`} prefetch className="gap-2"><Eye className="h-4 w-4" />View</Link></Button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {models?.data.length === 0 && <p className="p-4 text-sm text-slate-500">No models found for this brand.</p>}
+                {models?.links && models.links.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
+                    {models.links.map((link, idx) => link.url ? <Link key={idx} href={link.url} className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span key={idx} className="rounded-full border border-slate-200 px-3 py-1 text-slate-400" dangerouslySetInnerHTML={{ __html: link.label }} />)}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

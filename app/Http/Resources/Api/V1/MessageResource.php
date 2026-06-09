@@ -4,7 +4,6 @@ namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Cache;
 
 class MessageResource extends JsonResource
 {
@@ -16,14 +15,14 @@ class MessageResource extends JsonResource
         // For type checking, assume it's 'attachment' if there are attachments, otherwise 'text'
         $type = blank($this->attachments) ? 'text' : 'attachment';
 
-        $chatSlug = $this->relationLoaded('chat') && $this->chat ? $this->chat->slug : null;
+        // $chatSlug = $this->relationLoaded('chat') && $this->chat ? $this->chat->slug : null;
 
         return [
             'id' => (string) $this->id,
             'sender_role' => $this->sender_role,
             'type' => $type,
             'content' => $this->content,
-            'attachments' => $this->attachments ?? [], 
+            'attachments' => $this->attachments ?? [],
             'status' => 'sent',
             'created_at' => $this->created_at,
         ];

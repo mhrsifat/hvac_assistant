@@ -58,7 +58,7 @@ class EnvironmentSettingsService
   /**
    * @param  array<string, mixed>  $keyValuePairs
    */
-  public function update(array $keyValuePairs, bool $clearConfig = true, bool $quoteAllStrings = false): void
+  public function update(array $keyValuePairs, bool $clearConfig = true, bool $quoteAllStrings = true): void
   {
     if ($keyValuePairs === []) {
       return;
@@ -90,7 +90,7 @@ class EnvironmentSettingsService
     }
   }
 
-  public function set(string $key, mixed $value, bool $clearConfig = true, bool $quoteAllStrings = false): void
+  public function set(string $key, mixed $value, bool $clearConfig = true, bool $quoteAllStrings = true): void
   {
     $this->update([$key => $value], $clearConfig, $quoteAllStrings);
   }
@@ -99,7 +99,7 @@ class EnvironmentSettingsService
     string $envContent,
     string $key,
     mixed $value,
-    bool $quoteAllStrings,
+    bool $quoteAllStrings = true,
   ): string {
     $line = $this->buildEnvLine($key, $value, $quoteAllStrings);
     $pattern = '/^' . preg_quote($key, '/') . '=.*$/m';
@@ -124,12 +124,12 @@ class EnvironmentSettingsService
     return $trimmedEnvContent . $newline . $line . $newline;
   }
 
-  private function buildEnvLine(string $key, mixed $value, bool $quoteAllStrings = false): string
+  private function buildEnvLine(string $key, mixed $value, bool $quoteAllStrings = true): string
   {
     return $key . '=' . $this->formatValue($value, $quoteAllStrings);
   }
 
-  private function formatValue(mixed $value, bool $quoteAllStrings = false): string
+  private function formatValue(mixed $value, bool $quoteAllStrings = true): string
   {
     if (is_bool($value)) {
       return $value ? 'true' : 'false';
@@ -191,7 +191,8 @@ class EnvironmentSettingsService
   private function clearConfigCache(): void
   {
     try {
-      Artisan::call('config:clear');
+      Artisan::call('optimize:clear');
+      Artisan::call('queue:restart');
     } catch (Throwable) {
       // Ignore config cache failures so the file update still succeeds.
     }

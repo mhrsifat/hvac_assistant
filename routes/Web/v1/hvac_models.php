@@ -16,6 +16,7 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])
         Route::delete('{hvacModel}', 'destroy')->name('destroy');
 
         Route::post('{hvacModel}/documents', 'storeDocument')->name('documents.store');
+        Route::post('{hvacModel}/documents/{document}/feed', 'feedDocument')->name('documents.feed');
         Route::delete('{hvacModel}/documents/{document}', 'destroyDocument')->name('documents.destroy');
 
         Route::post('{hvacModel}/error-codes', 'storeErrorCode')->name('error-codes.store');

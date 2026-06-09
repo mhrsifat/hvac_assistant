@@ -1,5 +1,5 @@
 import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Eye, Plus, Trash2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Edit2, Eye, FileText, Plus, Sparkles, Trash2, Upload, X, AlertCircle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +43,9 @@ type SupportDocument = {
     file_path: string;
     mime_type: string;
     file_size: number;
+    ai_fed: boolean;
+    is_processing?: boolean;
+    ai_feed_error: { message?: string; type?: string } | null;
 };
 
 type ErrorCode = {
@@ -92,6 +95,9 @@ export default function HvacModelShow() {
     const [deleteDocTarget, setDeleteDocTarget] = useState<SupportDocument | null>(null);
     const [isDeleteEcOpen, setIsDeleteEcOpen] = useState(false);
     const [deleteEcTarget, setDeleteEcTarget] = useState<ErrorCode | null>(null);
+    const [isFeedOpen, setIsFeedOpen] = useState(false);
+    const [feedTarget, setFeedTarget] = useState<SupportDocument | null>(null);
+    const [expandedErrorDocId, setExpandedErrorDocId] = useState<number | null>(null);
     const documentInputRef = useRef<HTMLInputElement>(null);
 
     const documentForm = useForm<{ document: File | null }>({ document: null });
@@ -104,6 +110,20 @@ export default function HvacModelShow() {
     useEffect(() => {
         setShowError(Boolean(flash?.error));
     }, [flash?.error]);
+
+    // 100% Seamless Silent Polling Every 5 Seconds (No WebSockets)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['documents'], // Only fetch documents silently to update processing status
+                preserveState: true,
+                preserveScroll: true,
+                showProgress: false, // Prevents the blue loading bar at the top
+            });
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     const submitDocument = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
@@ -174,6 +194,135 @@ export default function HvacModelShow() {
             },
         });
     };
+
+    const openFeedModal = (doc: SupportDocument): void => {
+        setFeedTarget(doc);
+        setIsFeedOpen(true);
+    };
+
+    const confirmFeed = (): void => {
+        if (!feedTarget) return;
+        router.post(`/hvac-models/${model.id}/documents/${feedTarget.id}/feed`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsFeedOpen(false);
+                setFeedTarget(null);
+            },
+        });
+    };
+
+    // === রেন্ডার ফাংশন: কোড পরিষ্কার রাখার জন্য এবং Deferred বাইপাস করার জন্য ===
+    const renderDocuments = () => (
+        <div className="space-y-3">
+            {documents?.length ? (
+                documents.map((doc) => (
+                    <div
+                        key={doc.id}
+                        className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-slate-900">
+                                    {doc.original_name}
+                                </p>
+                                {doc.is_processing ? (
+                                    <Badge className="bg-amber-500">Processing...</Badge>
+                                ) : doc.ai_fed ? (
+                                    <Badge className="bg-emerald-600">Fed to AI</Badge>
+                                ) : doc.ai_feed_error ? (
+                                    <Badge variant="destructive">Feed failed</Badge>
+                                ) : (
+                                    <Badge variant="secondary">Not fed</Badge>
+                                )}
+                            </div>
+                            <p className="text-xs text-slate-500">
+                                {doc.mime_type} — {formatFileSize(doc.file_size)}
+                            </p>
+                            {doc.ai_feed_error?.message && (
+                                <div className="mt-1 text-xs">
+                                    {expandedErrorDocId === doc.id ? (
+                                        <div className="rounded bg-rose-50 p-2 text-rose-800">
+                                            <p className="whitespace-pre-wrap break-all">{doc.ai_feed_error.message}</p>
+                                            <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setExpandedErrorDocId(null)}>Show less</Button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <span className="truncate text-rose-600">
+                                                {doc.ai_feed_error.message.slice(0, 100)}
+                                                {doc.ai_feed_error.message.length > 100 ? '…' : ''}
+                                            </span>
+                                            {doc.ai_feed_error.message.length > 100 && (
+                                                <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setExpandedErrorDocId(doc.id)}>Show full error</Button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild variant="outline" size="sm">
+                                <a
+                                    href={doc.file_path}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="gap-2"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                    View
+                                </a>
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-2" onClick={() => openFeedModal(doc)} disabled={(doc.ai_fed && !doc.ai_feed_error) || doc.is_processing}>
+                                <Sparkles className="h-4 w-4" />Feed to AI
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => openDeleteDoc(doc)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                ))
+            ) : (
+                <p className="text-sm text-slate-500">
+                    No model documents uploaded yet.
+                </p>
+            )}
+        </div>
+    );
+
+    const renderErrorCodes = () => (
+        <div className="space-y-3">
+            {errorCodes?.length ? (
+                errorCodes.map((ec) => (
+                    <div
+                        key={ec.id}
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-2">
+                                <Badge variant="outline">{ec.code}</Badge>
+                                <p className="text-sm font-semibold text-slate-900">
+                                    {ec.description}
+                                </p>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openDeleteEc(ec)}
+                            >
+                                <Trash2 className="h-4 w-4 text-slate-500" />
+                            </Button>
+                        </div>
+                        <p className="mt-3 text-sm text-slate-600">{ec.resolution_steps}</p>
+                    </div>
+                ))
+            ) : (
+                <p className="text-sm text-slate-500">No model error codes yet.</p>
+            )}
+        </div>
+    );
 
     return (
         <AdminLayout title={`Model — ${model.name}`}>
@@ -477,61 +626,23 @@ export default function HvacModelShow() {
                             <CardDescription>Documentation specific to this model.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Deferred
-                                data="documents"
-                                fallback={
-                                    <div className="space-y-3">
-                                        <div className="h-12 animate-pulse rounded-md bg-slate-200" />
-                                        <div className="h-12 animate-pulse rounded-md bg-slate-200" />
-                                    </div>
-                                }
-                            >
-                                {() => (
-                                    <div className="space-y-3">
-                                        {documents?.length ? (
-                                            documents.map((doc) => (
-                                                <div
-                                                    key={doc.id}
-                                                    className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
-                                                >
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-slate-900">
-                                                            {doc.original_name}
-                                                        </p>
-                                                        <p className="text-xs text-slate-500">
-                                                            {doc.mime_type} — {formatFileSize(doc.file_size)}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Button asChild variant="outline" size="sm">
-                                                            <a
-                                                                href={doc.file_path}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="gap-2"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                                View
-                                                            </a>
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => openDeleteDoc(doc)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-sm text-slate-500">
-                                                No model documents uploaded yet.
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </Deferred>
+                            {/* শুধুমাত্র প্রথমবার লোড হওয়ার সময় Deferred ব্যবহার হবে */}
+                            {documents === undefined ? (
+                                <Deferred
+                                    data="documents"
+                                    fallback={
+                                        <div className="space-y-3">
+                                            <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+                                            <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+                                        </div>
+                                    }
+                                >
+                                    {() => renderDocuments()}
+                                </Deferred>
+                            ) : (
+                                // ডেটা চলে আসার পর সরাসরি রেন্ডার হবে (তাই পোলিং-এর সময় ব্লিঙ্ক করবে না)
+                                renderDocuments()
+                            )}
                         </CardContent>
                     </Card>
 
@@ -541,47 +652,21 @@ export default function HvacModelShow() {
                             <CardDescription>Errors that apply only to this model.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Deferred
-                                data="errorCodes"
-                                fallback={
-                                    <div className="space-y-3">
-                                        <div className="h-16 animate-pulse rounded-md bg-slate-200" />
-                                        <div className="h-16 animate-pulse rounded-md bg-slate-200" />
-                                    </div>
-                                }
-                            >
-                                {() => (
-                                    <div className="space-y-3">
-                                        {errorCodes?.length ? (
-                                            errorCodes.map((ec) => (
-                                                <div
-                                                    key={ec.id}
-                                                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                                                >
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="space-y-2">
-                                                            <Badge variant="outline">{ec.code}</Badge>
-                                                            <p className="text-sm font-semibold text-slate-900">
-                                                                {ec.description}
-                                                            </p>
-                                                        </div>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => openDeleteEc(ec)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-slate-500" />
-                                                        </Button>
-                                                    </div>
-                                                    <p className="mt-3 text-sm text-slate-600">{ec.resolution_steps}</p>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-sm text-slate-500">No model error codes yet.</p>
-                                        )}
-                                    </div>
-                                )}
-                            </Deferred>
+                            {errorCodes === undefined ? (
+                                <Deferred
+                                    data="errorCodes"
+                                    fallback={
+                                        <div className="space-y-3">
+                                            <div className="h-16 animate-pulse rounded-md bg-slate-200" />
+                                            <div className="h-16 animate-pulse rounded-md bg-slate-200" />
+                                        </div>
+                                    }
+                                >
+                                    {() => renderErrorCodes()}
+                                </Deferred>
+                            ) : (
+                                renderErrorCodes()
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -607,6 +692,26 @@ export default function HvacModelShow() {
                         <Button variant="destructive" onClick={confirmDeleteModel}>
                             Delete model
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Feed document dialog */}
+            <Dialog open={isFeedOpen} onOpenChange={(open) => {
+                setIsFeedOpen(open);
+                if (!open) setFeedTarget(null);
+            }}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Feed document to AI</DialogTitle>
+                        <DialogDescription>Extract text from this document and store it in the vector database.</DialogDescription>
+                    </DialogHeader>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        {feedTarget?.original_name ?? 'Selected document'}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsFeedOpen(false)}>Cancel</Button>
+                        <Button onClick={confirmFeed} className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"><Sparkles className="h-4 w-4" />Feed to AI</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

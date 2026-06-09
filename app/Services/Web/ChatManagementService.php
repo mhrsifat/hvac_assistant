@@ -13,7 +13,7 @@ class ChatManagementService
     public function userOptions(): Collection
     {
         return User::query()
-            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->select(['id', 'first_name', 'last_name', 'email', 'avatar'])
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
@@ -22,23 +22,53 @@ class ChatManagementService
     public function hvacModelOptions(): Collection
     {
         return HvacModel::query()
-            ->select(['id', 'name', 'brand_id'])
+            ->select(['id', 'name', 'brand_id', 'image_path'])
             ->with(['brand:id,name'])
             ->orderBy('name')
             ->get();
     }
 
-    public function paginateForIndex(?string $search = null, ?string $status = null): LengthAwarePaginator
+    public function brandOptions(): Collection
     {
+        return \App\Models\Brand::query()
+            ->select(['id', 'name'])
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function paginateForIndex(
+        ?string $search = null,
+        ?string $status = null,
+        ?string $userId = null,
+        ?string $hvacModelId = null,
+        ?string $brandId = null
+    ): LengthAwarePaginator {
         return Chat::query()
             ->with([
                 'user:id,first_name,last_name,email',
+                'user.subscriptions' => function ($query) {
+                    $query->whereIn('status', ['active', 'trialing'])
+                        ->with('plan:id,name')
+                        ->latest()
+                        ->limit(1);
+                },
                 'hvacModel:id,name,brand_id',
                 'hvacModel.brand:id,name',
             ])
             ->withCount('messages')
             ->when($status, function ($query, $statusValue): void {
                 $query->where('status', $statusValue);
+            })
+            ->when($userId, function ($query, $uid): void {
+                $query->where('user_id', $uid);
+            })
+            ->when($hvacModelId, function ($query, $modelId): void {
+                $query->where('hvac_model_id', $modelId);
+            })
+            ->when($brandId, function ($query, $bid): void {
+                $query->whereHas('hvacModel', function ($modelQuery) use ($bid): void {
+                    $modelQuery->where('brand_id', $bid);
+                });
             })
             ->when($search, function ($query, $searchTerm): void {
                 $query->where(function ($nestedQuery) use ($searchTerm): void {

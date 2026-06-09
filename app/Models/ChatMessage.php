@@ -31,12 +31,13 @@ class ChatMessage extends Model
     }
 
     // accessor to return attachments as full URLs
-    public function getAttachmentsAttribute(?string $value): ?array
+    public function getAttachmentsAttribute($value): ?array
     {
         if (blank($value)) {
             return null;
         }
-        $attachments = json_decode($value, true);
+
+        $attachments = is_string($value) ? json_decode($value, true) : $value;
 
         if (! is_array($attachments)) {
             return null;
@@ -44,20 +45,28 @@ class ChatMessage extends Model
 
         foreach ($attachments as $key => $attachment) {
             if (is_array($attachment)) {
-                if (isset($attachment['url'])) {
-                    $url = $attachment['url'];
-                    $attachments[$key]['url'] = filter_var($url, FILTER_VALIDATE_URL)
-                        ? $url
-                        : Storage::url($url);
+                if (! empty($attachment['url'])) {
+                    $attachments[$key]['url'] = $this->toAbsoluteAttachmentUrl($attachment['url']);
                 }
             } else {
-                $attachments[$key] = filter_var($attachment, FILTER_VALIDATE_URL)
-                    ? $attachment
-                    : Storage::url($attachment);
+                $attachments[$key] = $this->toAbsoluteAttachmentUrl($attachment);
             }
         }
 
         return $attachments;
+    }
+
+    protected function toAbsoluteAttachmentUrl(string $pathOrUrl): string
+    {
+        if (filter_var($pathOrUrl, FILTER_VALIDATE_URL)) {
+            return $pathOrUrl;
+        }
+
+        $path = str_starts_with($pathOrUrl, '/')
+            ? $pathOrUrl
+            : Storage::url($pathOrUrl);
+
+        return url($path);
     }
 
     public function chat(): BelongsTo

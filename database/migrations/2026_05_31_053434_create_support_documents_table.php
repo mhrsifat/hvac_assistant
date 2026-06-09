@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('mime_type', 120);
             $table->unsignedBigInteger('file_size');
+            $table->boolean('is_processing')->default(false);
             $table->boolean('ai_fed')->default(false);
             $table->json('ai_feed_error')->nullable();
             $table->timestamps();

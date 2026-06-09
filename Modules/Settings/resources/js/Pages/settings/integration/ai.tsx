@@ -7,6 +7,8 @@ import AdminSettingsLayout from '@/layouts/settings/admin-settings-layout';
 import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { CheckCircle2, Sparkles } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ConfirmSaveDialog } from '@/components/confirm-save-dialog';
 
 type OpenAiSettings = {
   configured: boolean;
@@ -17,6 +19,14 @@ type OpenAiSettingsPageProps = {
 };
 
 export default function Ai({ openAi }: OpenAiSettingsPageProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const submitRef = useRef<HTMLButtonElement>(null);
+
+  const handleConfirm = () => {
+    setIsModalOpen(false);
+    submitRef.current?.click();
+  };
+
   return (
     <AdminSettingsLayout title="AI settings">
       <Head title="AI settings" />
@@ -62,14 +72,20 @@ export default function Ai({ openAi }: OpenAiSettingsPageProps) {
                   className="h-11"
                   required
                 />
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                {/* <p className="text-sm text-zinc-500 dark:text-zinc-400">
                   The value is saved to <span className="font-medium">OPENAI_API_KEY</span> in <span className="font-medium">.env</span> and config cache is cleared automatically.
-                </p>
+                </p> */}
                 <InputError message={errors.openai_api_key} />
               </div>
 
               <div className="flex items-center gap-4 border-t border-zinc-100 pt-4 dark:border-zinc-900">
-                <Button disabled={processing} className="h-10 px-6 shadow-sm">
+                <button type="submit" ref={submitRef} className="hidden" />
+                <Button 
+                  type="button" 
+                  disabled={processing} 
+                  className="h-10 px-6 shadow-sm"
+                  onClick={() => setIsModalOpen(true)}
+                >
                   {processing ? 'Saving...' : 'Save AI settings'}
                 </Button>
 
@@ -90,6 +106,12 @@ export default function Ai({ openAi }: OpenAiSettingsPageProps) {
           )}
         </Form>
       </div>
+
+      <ConfirmSaveDialog
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onConfirm={handleConfirm}
+      />
     </AdminSettingsLayout>
   );
 }

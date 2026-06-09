@@ -68,6 +68,45 @@ class SupportDocumentService
         $this->storeEmbeddings($chunks);
     }
 
+    public function feedModelDocumentToAi(HvacModel $model, SupportDocument $document): void
+    {
+        $rawText = $this->extractDocumentText($document);
+        $cleanText = $this->sanitizeText($rawText);
+
+        if ($cleanText === '') {
+            throw new RuntimeException('No readable text found in the document.');
+        }
+
+        $model->loadMissing('brand');
+        $prefix = 'Brand: '.$model->brand->name.'. Model: '.$model->name.' ('.$model->model_number.'). Document: '.$document->original_name.'. ';
+        
+        $chunks = array_map(
+            static fn (string $chunk): string => $prefix.$chunk,
+            $this->chunkText($cleanText, 1000, 200),
+        );
+
+        $this->storeEmbeddings($chunks);
+    }
+
+    public function feedErrorCodeToAi(\App\Models\ErrorCode $errorCode): void
+    {
+        $errorCode->loadMissing(['brand', 'hvacModel']);
+        
+        $prefix = 'Brand: ' . $errorCode->brand->name . '. ';
+        if ($errorCode->hvacModel) {
+            $prefix .= 'Model: ' . $errorCode->hvacModel->name . ' (' . $errorCode->hvacModel->model_number . '). ';
+        }
+        
+        $content = "Error Code: {$errorCode->code}. Description: {$errorCode->description}. Resolution Steps: {$errorCode->resolution_steps}.";
+        
+        $chunks = array_map(
+            static fn (string $chunk): string => $prefix.$chunk,
+            $this->chunkText($content, 1000, 200),
+        );
+
+        $this->storeEmbeddings($chunks);
+    }
+
     public function delete(SupportDocument $document): void
     {
         $this->deleteStoredFile($document->getRawOriginal('file_path'));
@@ -164,6 +203,9 @@ class SupportDocumentService
 
     private function sanitizeText(string $text): string
     {
+        // Force valid UTF-8 to prevent json_encode failures in Guzzle
+        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        
         $cleaned = preg_replace('/\s+/', ' ', $text) ?? '';
 
         return trim($cleaned);

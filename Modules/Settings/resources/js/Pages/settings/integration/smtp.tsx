@@ -7,6 +7,8 @@ import AdminSettingsLayout from '@/layouts/settings/admin-settings-layout';
 import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { CheckCircle2, Mail } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { ConfirmSaveDialog } from '@/components/confirm-save-dialog';
 
 type SmtpSettings = {
   mail_mailer: string;
@@ -41,6 +43,14 @@ const selectClassName =
   'h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-700 dark:focus:ring-zinc-900';
 
 export default function Smtp({ smtp }: SmtpSettingsPageProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const submitRef = useRef<HTMLButtonElement>(null);
+
+  const handleConfirm = () => {
+    setIsModalOpen(false);
+    submitRef.current?.click();
+  };
+
   return (
     <AdminSettingsLayout title="SMTP settings">
       <Head title="SMTP settings" />
@@ -188,7 +198,13 @@ export default function Smtp({ smtp }: SmtpSettingsPageProps) {
               </div>
 
               <div className="flex items-center gap-4 border-t border-zinc-100 pt-4 dark:border-zinc-900">
-                <Button disabled={processing} className="h-10 px-6 shadow-sm">
+                <button type="submit" ref={submitRef} className="hidden" />
+                <Button 
+                  type="button" 
+                  disabled={processing} 
+                  className="h-10 px-6 shadow-sm"
+                  onClick={() => setIsModalOpen(true)}
+                >
                   {processing ? 'Saving...' : 'Save SMTP settings'}
                 </Button>
 
@@ -209,6 +225,12 @@ export default function Smtp({ smtp }: SmtpSettingsPageProps) {
           )}
         </Form>
       </div>
+
+      <ConfirmSaveDialog
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onConfirm={handleConfirm}
+      />
     </AdminSettingsLayout>
   );
 }
