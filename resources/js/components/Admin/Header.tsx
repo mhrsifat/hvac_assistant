@@ -113,26 +113,20 @@ export default function Header({
                     <Bars3Icon className="h-6 w-6" aria-hidden="true" />
                 </Button>
 
-                <div className="flex items-center gap-2 pr-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
                     <Link
                         href={dashboard.url()}
-                        className="flex items-center gap-2 text-xl font-semibold text-gray-700 dark:text-gray-100 hover:opacity-80 transition-opacity"
+                        className="flex min-w-0 items-center gap-2 text-xl font-semibold text-gray-700 transition-opacity hover:opacity-80 dark:text-gray-100"
                     >
                         <AppLogoIcon className="h-6 w-6 fill-orange-500" />
-                        <span className="hidden sm:inline">
+                        <span className="hidden truncate sm:inline">
                             {systemName}
                         </span>
                     </Link>
                 </div>
 
-                <div className="flex w-full items-center">
-                    <div className="flex-[2]">
-                        {/* left side */}
-                    </div>
-
-                    <div className="ml-4 hidden md:flex flex-[3] min-w-0">
+                <div className="ml-3 hidden w-full max-w-xs min-w-0 md:flex lg:max-w-sm">
                         <GlobalSearch />
-                    </div>
                 </div>
 
                 <Button
