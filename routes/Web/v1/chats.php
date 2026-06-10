@@ -9,9 +9,9 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])
     ->name('chats.')
     ->group(function (): void {
         Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
+        // Route::post('/', 'store')->name('store');
 
-        Route::get('{chat}', 'show')->name('show');
-        Route::patch('{chat}/status', 'updateStatus')->name('update-status');
-        Route::delete('{chat}', 'destroy')->name('destroy');
+        Route::get('{chat:slug}', 'show')->name('show');
+        Route::patch('{chat:slug}/status', 'updateStatus')->name('update-status');
+        Route::delete('{chat:slug}', 'destroy')->name('destroy');
     });

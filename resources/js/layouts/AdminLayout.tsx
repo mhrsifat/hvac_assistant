@@ -111,7 +111,6 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             />
 
             <Header
-                isMiniSidebar={isMiniSidebar}
                 setIsMiniSidebar={setIsMiniSidebar}
                 setIsMobileOpen={setIsMobileOpen}
             />

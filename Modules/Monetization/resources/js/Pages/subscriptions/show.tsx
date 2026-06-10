@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import AdminLayout from '@/layouts/AdminLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Calendar, CreditCard, Clock, Minus, Pause, Play, Plus, User as UserIcon, X } from 'lucide-react';
-import {  useEffect, useState } from 'react';
+import { useState } from 'react';
 import type {FormEvent} from 'react';
 
 type User = {
@@ -76,18 +76,18 @@ type PageProps = {
 };
 
 const statusStyles: Record<string, string> = {
-  active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  trialing: 'bg-amber-50 text-amber-700 border-amber-200',
-  past_due: 'bg-red-50 text-red-700 border-red-200',
-  canceled: 'bg-slate-100 text-slate-600 border-slate-200',
-  paused: 'bg-blue-50 text-blue-700 border-blue-200',
+  active: 'bg-emerald-50 dark:bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 dark:border-emerald-500/20',
+  trialing: 'bg-amber-50 dark:bg-amber-500/10 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 dark:border-amber-500/20',
+  past_due: 'bg-red-50 dark:bg-red-500/10 dark:bg-red-500/10 text-red-700 dark:text-red-400 dark:text-red-400 border-red-200 dark:border-red-500/20 dark:border-red-500/20',
+  canceled: 'bg-slate-100 dark:bg-slate-800 dark:bg-slate-800 text-slate-600 dark:text-slate-300 dark:text-slate-300 border-slate-200 dark:border-slate-800 dark:border-slate-800',
+  paused: 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
 };
 
 const paymentStatusStyles: Record<string, string> = {
-  completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  pending: 'bg-amber-50 text-amber-700 border-amber-200',
-  failed: 'bg-red-50 text-red-700 border-red-200',
-  refunded: 'bg-slate-100 text-slate-600 border-slate-200',
+  completed: 'bg-emerald-50 dark:bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 dark:border-emerald-500/20',
+  pending: 'bg-amber-50 dark:bg-amber-500/10 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 dark:border-amber-500/20',
+  failed: 'bg-red-50 dark:bg-red-500/10 dark:bg-red-500/10 text-red-700 dark:text-red-400 dark:text-red-400 border-red-200 dark:border-red-500/20 dark:border-red-500/20',
+  refunded: 'bg-slate-100 dark:bg-slate-800 dark:bg-slate-800 text-slate-600 dark:text-slate-300 dark:text-slate-300 border-slate-200 dark:border-slate-800 dark:border-slate-800',
 };
 
 const formatDate = (dateString: string | null): string => {
@@ -126,7 +126,8 @@ const getUserDisplayName = (user: User): string => {
 
 export default function SubscriptionsShow() {
   const { subscription, flash } = usePage<PageProps>().props;
-  const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
+  const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
+  const showSuccess = Boolean(flash?.success) && flash?.success !== dismissedSuccess;
 
   // Cancel dialog
   const [isCancelOpen, setIsCancelOpen] = useState(false);
@@ -144,15 +145,13 @@ export default function SubscriptionsShow() {
   const txnForm = useForm({
     user_id: String(subscription.user.id),
     plan_id: String(subscription.plan?.id ?? ''),
+    subscription_id: String(subscription.id),
     amount: '',
     currency: subscription.plan?.currency ?? 'USD',
     payment_method: subscription.payment_method || 'manual',
     status: 'completed',
   });
 
-  useEffect(() => {
-    setShowSuccess(Boolean(flash?.success));
-  }, [flash?.success]);
 
   const confirmCancel = () => {
     router.post(`/subscriptions/${subscription.id}/cancel`, {}, {
@@ -204,7 +203,7 @@ export default function SubscriptionsShow() {
     <AdminLayout title="Subscription Details">
       <Head title={`Subscription #${subscription.id}`} />
 
-      <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      <div className="space-y-6 pb-12">
         {/* Back Button */}
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" asChild className="gap-2">
@@ -217,26 +216,26 @@ export default function SubscriptionsShow() {
 
         {/* Flash message */}
         {flash?.success && showSuccess ? (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 dark:border-emerald-500/20 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400 dark:text-emerald-400">
             <span>{flash.success}</span>
-            <button type="button" onClick={() => setShowSuccess(false)} className="rounded p-1 text-emerald-700/80 transition hover:text-emerald-900" aria-label="Dismiss">
+            <button type="button" onClick={() => setDismissedSuccess(flash?.success ?? null)} className="rounded p-1 text-emerald-700 dark:text-emerald-400 dark:text-emerald-400/80 transition hover:text-emerald-900" aria-label="Dismiss">
               <X className="h-4 w-4" />
             </button>
           </div>
         ) : null}
 
         {/* Top Banner */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white dark:bg-slate-900 dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white dark:text-white tracking-tight">
                 Subscription #{subscription.id}
               </h1>
               <Badge variant="outline" className={`capitalize ${statusStyles[subscription.status] ?? ''}`}>
                 {subscription.status}
               </Badge>
             </div>
-            <p className="text-slate-500 text-sm flex items-center gap-2">
+            <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 text-sm flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Created {formatDate(subscription.created_at)}
             </p>
@@ -247,7 +246,7 @@ export default function SubscriptionsShow() {
               <>
                 {subscription.plan?.billing_interval !== 'lifetime' && (
                   <>
-                    <Button variant="outline" size="sm" className="gap-1.5 text-amber-700 border-amber-200 hover:bg-amber-50" onClick={() => {
+                    <Button variant="outline" size="sm" className="gap-1.5 text-amber-700 dark:text-amber-400 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 dark:border-amber-500/20 hover:bg-amber-50 dark:bg-amber-500/10 dark:bg-amber-500/10" onClick={() => {
                       extendForm.setData('days', '30'); extendForm.clearErrors(); setIsExtendOpen(true); 
                     }}>
                       <Calendar className="h-4 w-4" /> Extend
@@ -259,18 +258,18 @@ export default function SubscriptionsShow() {
                     </Button>
                   </>
                 )}
-                <Button variant="outline" size="sm" className="gap-1.5 text-blue-700 border-blue-200 hover:bg-blue-50" onClick={confirmPause}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:bg-blue-500/10" onClick={confirmPause}>
                   <Pause className="h-4 w-4" /> Pause
                 </Button>
               </>
             ) : null}
             {subscription.status === 'paused' ? (
-              <Button variant="outline" size="sm" className="gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={confirmReactivate}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-emerald-700 dark:text-emerald-400 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 dark:border-emerald-500/20 hover:bg-emerald-50 dark:bg-emerald-500/10 dark:bg-emerald-500/10" onClick={confirmReactivate}>
                 <Play className="h-4 w-4" /> Reactivate
               </Button>
             ) : null}
             {subscription.status === 'canceled' ? (
-              <Button variant="outline" size="sm" className="gap-1.5 text-emerald-700 border-emerald-200 hover:bg-emerald-50" onClick={confirmReactivate}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-emerald-700 dark:text-emerald-400 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20 dark:border-emerald-500/20 hover:bg-emerald-50 dark:bg-emerald-500/10 dark:bg-emerald-500/10" onClick={confirmReactivate}>
                 <Play className="h-4 w-4" /> Reactivate
               </Button>
             ) : null}
@@ -286,8 +285,8 @@ export default function SubscriptionsShow() {
           {/* Left Column */}
           <div className="space-y-6 lg:col-span-1">
             {/* User Info */}
-            <Card className="shadow-sm border-slate-200">
-              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+            <Card className="shadow-sm border-slate-200 dark:border-slate-800 dark:border-slate-800">
+              <CardHeader className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 dark:border-slate-800 pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
                   <UserIcon className="h-4 w-4 text-indigo-500" />
                   Subscriber
@@ -296,63 +295,63 @@ export default function SubscriptionsShow() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
                   {subscription.user.avatar ? (
-                    <img src={subscription.user.avatar} alt="Avatar" className="h-12 w-12 rounded-full object-cover border border-slate-200" />
+                    <img src={subscription.user.avatar} alt="Avatar" className="h-12 w-12 rounded-full object-cover border border-slate-200 dark:border-slate-800 dark:border-slate-800" />
                   ) : (
-                    <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+                    <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">
                       {subscription.user.first_name?.[0] || subscription.user.email[0].toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold text-slate-900">{getUserDisplayName(subscription.user)}</p>
-                    <p className="text-sm text-slate-500">{subscription.user.email}</p>
+                    <p className="font-semibold text-slate-900 dark:text-white dark:text-white">{getUserDisplayName(subscription.user)}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400">{subscription.user.email}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Subscription Details */}
-            <Card className="shadow-sm border-slate-200">
-              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+            <Card className="shadow-sm border-slate-200 dark:border-slate-800 dark:border-slate-800">
+              <CardHeader className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 dark:border-slate-800 pb-4">
                 <CardTitle className="text-base">Subscription Details</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <dl className="divide-y divide-slate-100">
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Plan</dt>
-                    <dd className="text-sm text-slate-900 font-medium">{subscription.plan?.name ?? '—'}</dd>
+                <dl className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Plan</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white font-medium">{subscription.plan?.name ?? '—'}</dd>
                   </div>
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Price</dt>
-                    <dd className="text-sm text-slate-900 font-medium">
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Price</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white font-medium">
                       {subscription.plan ? formatPrice(subscription.plan.final_price, subscription.plan.currency) : '—'}
-                      {subscription.plan ? <span className="text-slate-500 font-normal ml-1">/{subscription.plan.billing_interval}</span> : null}
+                      {subscription.plan ? <span className="text-slate-500 dark:text-slate-400 font-normal ml-1">/{subscription.plan.billing_interval}</span> : null}
                     </dd>
                   </div>
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Payment Method</dt>
-                    <dd className="text-sm text-slate-900 capitalize">{subscription.payment_method || '—'}</dd>
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Payment Method</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white capitalize">{subscription.payment_method || '—'}</dd>
                   </div>
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Started</dt>
-                    <dd className="text-sm text-slate-900">{formatDate(subscription.starts_at)}</dd>
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Started</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white">{formatDate(subscription.starts_at)}</dd>
                   </div>
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Ends At</dt>
-                    <dd className="text-sm text-slate-900 font-semibold text-violet-600">
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Ends At</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white font-semibold text-violet-600">
                       {subscription.plan?.billing_interval === 'lifetime' ? 'Lifetime' : formatDate(subscription.ends_at)}
                     </dd>
                   </div>
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Trial Ends</dt>
-                    <dd className="text-sm text-slate-900">{formatDate(subscription.trial_ends_at)}</dd>
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Trial Ends</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white">{formatDate(subscription.trial_ends_at)}</dd>
                   </div>
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Cancelled At</dt>
-                    <dd className="text-sm text-slate-900">{formatDate(subscription.cancelled_at)}</dd>
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Cancelled At</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white">{formatDate(subscription.cancelled_at)}</dd>
                   </div>
-                  <div className="px-6 py-4 flex justify-between items-center">
-                    <dt className="text-sm font-medium text-slate-500">Provider ID</dt>
-                    <dd className="text-sm text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded text-xs">
+                  <div className="px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4">
+                    <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Provider ID</dt>
+                    <dd className="text-sm text-slate-900 dark:text-white font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-xs break-all">
                       {subscription.provider_subscription_id || 'N/A'}
                     </dd>
                   </div>
@@ -362,12 +361,12 @@ export default function SubscriptionsShow() {
 
             {/* Provider Metadata */}
             {subscription.provider_metadata ? (
-              <Card className="shadow-sm border-slate-200">
-                <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+              <Card className="shadow-sm border-slate-200 dark:border-slate-800 dark:border-slate-800">
+                <CardHeader className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 dark:border-slate-800 pb-4">
                   <CardTitle className="text-base">Provider Metadata</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <pre className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-4 overflow-x-auto max-h-64">
+                  <pre className="text-xs text-slate-700 dark:text-slate-300 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 dark:border-slate-800 rounded-lg p-4 overflow-x-auto max-h-64">
                     {JSON.stringify(subscription.provider_metadata, null, 2)}
                   </pre>
                 </CardContent>
@@ -377,25 +376,27 @@ export default function SubscriptionsShow() {
 
           {/* Right Column: Payments */}
           <div className="lg:col-span-2">
-            <Card className="shadow-sm border-slate-200 h-full">
-              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4 flex flex-row items-center justify-between">
+            <Card className="shadow-sm border-slate-200 dark:border-slate-800 dark:border-slate-800 h-full">
+              <CardHeader className="bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 dark:border-slate-800 pb-4 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-indigo-500" />
                     Payment History
                   </CardTitle>
                 </div>
-                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+                <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-500/10 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 dark:text-indigo-400 hover:bg-indigo-50 dark:bg-indigo-500/10 dark:bg-indigo-500/10">
                   {subscription.payments?.length ?? 0} payment{(subscription.payments?.length ?? 0) === 1 ? '' : 's'}
                 </Badge>
-                <Button size="sm" className="gap-1.5" onClick={() => { txnForm.setData({ user_id: String(subscription.user.id), plan_id: String(subscription.plan?.id ?? ''), amount: '', currency: subscription.plan?.currency ?? 'USD', payment_method: subscription.payment_method || 'manual', status: 'completed' }); txnForm.clearErrors(); setIsTxnOpen(true); }}>
+                <Button size="sm" className="gap-1.5" onClick={() => {
+ txnForm.setData({ user_id: String(subscription.user.id), plan_id: String(subscription.plan?.id ?? ''), subscription_id: String(subscription.id), amount: '', currency: subscription.plan?.currency ?? 'USD', payment_method: subscription.payment_method || 'manual', status: 'completed' }); txnForm.clearErrors(); setIsTxnOpen(true); 
+}}>
                   <Plus className="h-3.5 w-3.5" /> Record Transaction
                 </Button>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
-                    <thead className="bg-white border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
+                    <thead className="bg-white dark:bg-slate-900 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 dark:text-slate-400">
                       <tr>
                         <th className="px-6 py-4 text-left font-medium">Transaction ID</th>
                         <th className="px-6 py-4 text-left font-medium">Amount</th>
@@ -404,10 +405,10 @@ export default function SubscriptionsShow() {
                         <th className="px-6 py-4 text-left font-medium">Date</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 dark:bg-slate-900">
                       {subscription.payments && subscription.payments.length > 0 ? (
                         subscription.payments.map((payment) => (
-                          <tr key={payment.id} className="hover:bg-slate-50/50 transition-colors">
+                          <tr key={payment.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50 transition-colors">
                             <td className="px-6 py-4">
                               <Link
                                 href={`/transactions/${payment.id}`}
@@ -416,7 +417,7 @@ export default function SubscriptionsShow() {
                                 {payment.transaction_id}
                               </Link>
                             </td>
-                            <td className="px-6 py-4 font-medium text-slate-900">
+                            <td className="px-6 py-4 font-medium text-slate-900 dark:text-white dark:text-white">
                               {formatPrice(payment.amount, payment.currency)}
                             </td>
                             <td className="px-6 py-4">
@@ -425,18 +426,18 @@ export default function SubscriptionsShow() {
                               </Badge>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="capitalize text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-medium">
+                              <span className="capitalize text-slate-600 dark:text-slate-300 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 dark:bg-slate-800 px-2 py-1 rounded text-xs font-medium">
                                 {payment.payment_method}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-slate-600">
+                            <td className="px-6 py-4 text-slate-600 dark:text-slate-300 dark:text-slate-300">
                               {formatDate(payment.created_at)}
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                          <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400 dark:text-slate-400">
                             No payments recorded for this subscription.
                           </td>
                         </tr>
@@ -458,7 +459,7 @@ export default function SubscriptionsShow() {
                 This will cancel the subscription immediately. The user will lose access.
               </DialogDescription>
             </DialogHeader>
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+            <div className="rounded-lg border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/10 px-4 py-3 text-sm text-rose-900 dark:text-rose-400">
               <p className="font-medium">{getUserDisplayName(subscription.user)}</p>
               <p className="text-xs text-rose-700 mt-1">Plan: {subscription.plan?.name ?? 'Unknown'}</p>
             </div>
@@ -479,12 +480,12 @@ export default function SubscriptionsShow() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={submitExtend} className="space-y-4">
-              <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+              <div className="rounded-lg border border-indigo-100 bg-indigo-50 dark:bg-indigo-500/10 dark:bg-indigo-500/10 px-4 py-3 text-sm text-indigo-900">
                 <p className="font-medium">{getUserDisplayName(subscription.user)}</p>
-                <p className="text-xs text-indigo-700 mt-1">Current end: {formatDate(subscription.ends_at)}</p>
+                <p className="text-xs text-indigo-700 dark:text-indigo-400 dark:text-indigo-400 mt-1">Current end: {formatDate(subscription.ends_at)}</p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Days to extend</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300">Days to extend</label>
                 <Input
                   type="number"
                   min="1"
@@ -519,7 +520,7 @@ export default function SubscriptionsShow() {
                 <p className="text-xs text-orange-700 mt-1">Current end: {formatDate(subscription.ends_at)}</p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Days to subtract</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300">Days to subtract</label>
                 <Input type="number" min="1" max="365" value={reduceForm.data.days} onChange={(e) => reduceForm.setData('days', e.target.value)} placeholder="7" className={reduceForm.errors.days ? 'border-red-500' : ''} />
                 {reduceForm.errors.days ? <span className="text-xs text-red-500">{reduceForm.errors.days}</span> : null}
               </div>
@@ -539,29 +540,29 @@ export default function SubscriptionsShow() {
               <DialogDescription>Record a manual payment for {getUserDisplayName(subscription.user)}.</DialogDescription>
             </DialogHeader>
             <form onSubmit={submitTxn} className="space-y-4">
-              <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm">
+              <div className="rounded-lg border border-indigo-100 bg-indigo-50 dark:bg-indigo-500/10 dark:bg-indigo-500/10 px-4 py-3 text-sm">
                 <p className="font-medium text-indigo-900">{subscription.plan?.name ?? 'Unknown Plan'}</p>
-                <p className="text-xs text-indigo-700 mt-0.5">Subscription #{subscription.id}</p>
+                <p className="text-xs text-indigo-700 dark:text-indigo-400 dark:text-indigo-400 mt-0.5">Subscription #{subscription.id}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Amount</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300">Amount</label>
                   <Input type="number" step="0.01" min="0" value={txnForm.data.amount} onChange={(e) => txnForm.setData('amount', e.target.value)} placeholder="0.00" className={txnForm.errors.amount ? 'border-red-500' : ''} />
                   {txnForm.errors.amount ? <span className="text-xs text-red-500">{txnForm.errors.amount}</span> : null}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Currency</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300">Currency</label>
                   <Input value={txnForm.data.currency} onChange={(e) => txnForm.setData('currency', e.target.value)} maxLength={3} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Payment method</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300">Payment method</label>
                   <Input value={txnForm.data.payment_method} onChange={(e) => txnForm.setData('payment_method', e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Status</label>
-                  <select value={txnForm.data.status} onChange={(e) => txnForm.setData('status', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300">Status</label>
+                  <select value={txnForm.data.status} onChange={(e) => txnForm.setData('status', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 dark:border-slate-800 dark:border-slate-800 px-3 text-sm">
                     <option value="completed">Completed</option>
                     <option value="pending">Pending</option>
                     <option value="failed">Failed</option>

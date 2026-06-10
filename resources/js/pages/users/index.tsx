@@ -74,7 +74,8 @@ export default function UsersIndex() {
   const { users, filters, flash } = usePage<PageProps>().props;
   const [searchValue, setSearchValue] = useState(filters.search ?? '');
   const [statusValue, setStatusValue] = useState(filters.status ?? '');
-  const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
+  const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
+  const showSuccess = Boolean(flash?.success) && flash?.success !== dismissedSuccess;
 
   const applyFilters = () => {
     router.get(
@@ -116,18 +117,18 @@ export default function UsersIndex() {
 
       <div className="space-y-8">
         {/* Header */}
-        <section className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm">
+        <section className="relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-violet-200/60 blur-3xl" />
           <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-cyan-200/70 blur-3xl" />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
                 Administration
               </p>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
                 User Management
               </h1>
-              <p className="max-w-2xl text-sm text-slate-600">
+              <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-300">
                 View user profiles, manage subscriptions, and monitor account activity.
               </p>
             </div>
@@ -136,9 +137,9 @@ export default function UsersIndex() {
 
         {/* Flash */}
         {flash?.success && showSuccess ? (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
             <span>{flash.success}</span>
-            <button type="button" onClick={() => setShowSuccess(false)} className="rounded p-1 text-emerald-700/80 transition hover:text-emerald-900" aria-label="Dismiss">
+            <button type="button" onClick={() => setDismissedSuccess(flash?.success ?? null)} className="rounded p-1 text-emerald-700 dark:text-emerald-400/80 transition hover:text-emerald-900" aria-label="Dismiss">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -158,14 +159,14 @@ export default function UsersIndex() {
           <select
             value={statusValue}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+            className="h-10 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 text-sm min-w-[120px]"
           >
             {statusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <option key={opt.value} value={opt.value} className="bg-white dark:bg-slate-900">{opt.label}</option>
             ))}
           </select>
           {(filters.search || filters.status) ? (
-            <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-slate-500">
+            <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-slate-500 dark:text-slate-400">
               <X className="h-3.5 w-3.5" />
               Clear
             </Button>
@@ -185,10 +186,10 @@ export default function UsersIndex() {
           }
         >
           {() => (
-            <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
+                  <thead className="border-b bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-4 text-left">User</th>
                       <th className="px-4 py-4 text-left">Username</th>
@@ -203,33 +204,33 @@ export default function UsersIndex() {
                   <tbody>
                     {users?.data.length ? (
                       users.data.map((user) => (
-                        <tr key={user.id} className="border-b last:border-b-0 align-top hover:bg-slate-50/50 transition-colors">
+                        <tr key={user.id} className="border-b last:border-b-0 align-top hover:bg-slate-50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50 transition-colors">
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
                               {user.avatar ? (
-                                <img src={user.avatar} alt="Avatar" className="h-9 w-9 rounded-full object-cover border border-slate-200" />
+                                <img src={user.avatar} alt="Avatar" className="h-9 w-9 rounded-full object-cover border border-slate-200 dark:border-slate-800" />
                               ) : (
-                                <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                                <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
                                   {user.first_name?.[0] || user.email[0].toUpperCase()}
                                 </div>
                               )}
                               <div>
-                                <p className="font-semibold text-slate-900">{getUserDisplayName(user)}</p>
-                                <p className="text-xs text-slate-500">{user.email}</p>
+                                <p className="font-semibold text-slate-900 dark:text-white">{getUserDisplayName(user)}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
                               </div>
                             </div>
                           </td>
 
                           <td className="px-4 py-4">
-                            <span className="font-mono text-xs text-slate-600">{user.username || '—'}</span>
+                            <span className="font-mono text-xs text-slate-600 dark:text-slate-300">{user.username || '—'}</span>
                           </td>
 
                           <td className="px-4 py-4">
                             <Badge
                               variant="outline"
                               className={user.status === 'active'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-slate-100 text-slate-600 border-slate-200'}
+                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'}
                             >
                               {user.status || 'unknown'}
                             </Badge>
@@ -249,15 +250,15 @@ export default function UsersIndex() {
                             )}
                           </td>
 
-                          <td className="px-4 py-4 text-slate-600">
+                          <td className="px-4 py-4 text-slate-600 dark:text-slate-300">
                             {user.subscriptions_count}
                           </td>
 
-                          <td className="px-4 py-4 text-slate-600">
+                          <td className="px-4 py-4 text-slate-600 dark:text-slate-300">
                             {user.payments_count}
                           </td>
 
-                          <td className="px-4 py-4 text-slate-600">
+                          <td className="px-4 py-4 text-slate-600 dark:text-slate-300">
                             {formatDate(user.created_at)}
                           </td>
 
@@ -277,7 +278,7 @@ export default function UsersIndex() {
                       ))
                     ) : (
                       <tr>
-                        <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={8}>
+                        <td className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400" colSpan={8}>
                           No users found.
                         </td>
                       </tr>
@@ -287,19 +288,19 @@ export default function UsersIndex() {
               </div>
 
               {users?.links && users.links.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
                   {users.links.map((link, index) =>
                     link.url ? (
                       <Link
                         key={index}
                         href={link.url}
-                        className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`}
+                        className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300'}`}
                         dangerouslySetInnerHTML={{ __html: link.label }}
                       />
                     ) : (
                       <span
                         key={index}
-                        className="rounded-full border border-slate-200 px-3 py-1 text-slate-400"
+                        className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-slate-400"
                         dangerouslySetInnerHTML={{ __html: link.label }}
                       />
                     ),

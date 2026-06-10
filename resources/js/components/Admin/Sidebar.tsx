@@ -1,5 +1,5 @@
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
-import { Link } from '@inertiajs/react';
+import { ChevronRightIcon, ArrowRightStartOnRectangleIcon } from '@heroicons/react/24/outline';
+import { Link, router } from '@inertiajs/react';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
@@ -379,7 +379,7 @@ export default function Sidebar({
     const baseItemClass =
         'relative h-auto w-full rounded-lg px-3 py-2 text-left font-medium hover:bg-gray-200 flex items-center justify-start gap-3';
     const sidebarClass =
-        'fixed top-16 bottom-0 left-0 z-50 w-72 lg:w-[260px] border-r border-gray-300 dark:border-gray-700 bg-[#f8f9fa] dark:bg-[#202124] shadow-sm lg:shadow-none transition-transform duration-200 flex h-full flex-col';
+        'fixed top-16 bottom-0 left-0 z-50 w-72 lg:w-[260px] border-r border-gray-300 dark:border-gray-700 bg-[#f8f9fa] dark:bg-[#202124] shadow-sm lg:shadow-none transition-transform duration-200 flex flex-col';
 
     return (
         <aside
@@ -416,25 +416,32 @@ export default function Sidebar({
 
                             {section.footerAction?.href && (
                                 <div className="pt-2">
-                                    <Button
-                                        variant="outline"
-                                        className="h-10 w-full rounded-md border-blue-300 bg-white text-sm font-semibold text-[#1a73e8] hover:bg-blue-50 dark:border-blue-900 dark:bg-[#202124] dark:text-[#8ab4f8] dark:hover:bg-blue-900/30"
-                                        asChild
+                                    <a
+                                        href={toUrl(section.footerAction.href)}
+                                        className="inline-flex h-10 w-full items-center justify-center rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-[#1a73e8] shadow-xs hover:bg-blue-50 dark:border-blue-900 dark:bg-[#202124] dark:text-[#8ab4f8] dark:hover:bg-blue-900/30"
+                                        onClick={() => {
+                                            closeSidebarAfterNavigation();
+                                        }}
                                     >
-                                        <Link
-                                            href={section.footerAction.href}
-                                            onClick={() => {
-                                                closeSidebarAfterNavigation();
-                                            }}
-                                        >
-                                            {section.footerAction.label}
-                                        </Link>
-                                    </Button>
+                                        {section.footerAction.label}
+                                    </a>
                                 </div>
                             )}
                         </section>
                     );
                 })}
+            </div>
+
+            {/* Sticky logout footer */}
+            <div className="shrink-0 border-t border-gray-300 px-3 py-3 dark:border-gray-700">
+                <button
+                    type="button"
+                    onClick={() => router.post('/logout')}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 dark:text-gray-300 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                >
+                    <ArrowRightStartOnRectangleIcon className="h-5 w-5 shrink-0 opacity-70" aria-hidden="true" />
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
     );

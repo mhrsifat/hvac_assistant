@@ -11,13 +11,14 @@ import { cn, toUrl } from '@/lib/utils';
 import { edit as editProfile } from '@/routes/profile';
 import type { NavItem } from '@/types';
 
-type SettingsNavItem = Omit<NavItem, 'href'> & {
+export type SettingsNavItem = Omit<NavItem, 'href'> & {
     href?: NavItem['href'];
     children?: SettingsNavItem[];
     relatedRoutes?: string[];
+    description?: string;
 };
 
-const sidebarNavItems: SettingsNavItem[] = [
+export const sidebarNavItems: SettingsNavItem[] = [
     {
         title: 'Account settings',
         href: '/settings/account',

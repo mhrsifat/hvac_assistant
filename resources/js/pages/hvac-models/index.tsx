@@ -1,7 +1,7 @@
 import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Eye, Plus, Search, Trash2, X } from 'lucide-react';
+import { Eye, Plus, Search, Trash2, X, Upload } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,8 +24,9 @@ type BrandOption = {
 
 type HvacModel = {
     id: number;
-    brand_id: number;
     name: string;
+    slug: string;
+    brand_id: number;
     model_number: string | null;
     capacity_btu: number | null;
     efficiency_rating: string | null;
@@ -61,14 +62,21 @@ type HvacModelsPageProps = {
 
 export default function HvacModelsIndex() {
     const { models, brands, filters, flash } = usePage<HvacModelsPageProps>().props;
-    const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
-    const [showError, setShowError] = useState(Boolean(flash?.error));
+    const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
+    const [dismissedError, setDismissedError] = useState<string | null>(null);
+    const showSuccess = Boolean(flash?.success) && flash?.success !== dismissedSuccess;
+    const showError = Boolean(flash?.error) && flash?.error !== dismissedError;
     const [search, setSearch] = useState(filters.search ?? '');
     const [brandFilter, setBrandFilter] = useState(filters.brand_id ? String(filters.brand_id) : '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<HvacModel | null>(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    
+    // Drag & Drop + Image Preview States
+    const [isDragging, setIsDragging] = useState(false);
+    const dragCounter = useRef(0);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const createForm = useForm<{
         brand_id: string;
@@ -90,14 +98,6 @@ export default function HvacModelsIndex() {
         image: null,
     });
 
-    useEffect(() => {
-        setShowSuccess(Boolean(flash?.success));
-    }, [flash?.success]);
-
-    useEffect(() => {
-        setShowError(Boolean(flash?.error));
-    }, [flash?.error]);
-
     const submitCreate = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
         createForm.post('/hvac-models', {
@@ -105,12 +105,86 @@ export default function HvacModelsIndex() {
             preserveScroll: true,
             onSuccess: () => {
                 createForm.reset();
+
                 if (imageInputRef.current) {
                     imageInputRef.current.value = '';
                 }
+
                 setIsCreateOpen(false);
+                setIsDragging(false);
+                dragCounter.current = 0;
+
+                if (imagePreview) {
+                    URL.revokeObjectURL(imagePreview);
+                }
+
+                setImagePreview(null);
             },
         });
+    };
+
+    // Improved Drag and Drop Handlers to prevent blinking
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current += 1;
+
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current -= 1;
+
+        if (dragCounter.current === 0) {
+            setIsDragging(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        dragCounter.current = 0;
+
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            createForm.setData('image', file);
+
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview);
+            }
+
+            setImagePreview(URL.createObjectURL(file));
+            e.dataTransfer.clearData();
+        }
+    };
+
+    const triggerFileInput = () => {
+        imageInputRef.current?.click();
+    };
+
+    const clearImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        createForm.setData('image', null);
+
+        if (imagePreview) {
+            URL.revokeObjectURL(imagePreview);
+        }
+
+        setImagePreview(null);
+
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
+        }
     };
 
     const applyFilters = (event: FormEvent<HTMLFormElement>): void => {
@@ -132,7 +206,7 @@ export default function HvacModelsIndex() {
             return;
         }
 
-        router.delete(`/hvac-models/${deleteTarget.id}`, {
+        router.delete(`/hvac-models/${deleteTarget.slug}`, {
             preserveScroll: true,
             onSuccess: () => {
                 setIsDeleteOpen(false);
@@ -147,22 +221,36 @@ export default function HvacModelsIndex() {
 
             <div className="space-y-8">
                 {/* Header */}
-                <section className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm">
+                <section className="relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 p-6 shadow-sm">
                     <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-sky-200/60 blur-3xl" />
                     <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-200/70 blur-3xl" />
                     <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
                                 Catalog
                             </p>
-                            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
                                 HVAC Models
                             </h1>
-                            <p className="max-w-xl text-sm text-slate-600">
+                            <p className="max-w-xl text-sm text-slate-600 dark:text-slate-300">
                                 Manage model profiles, specs, documents, and error codes for every unit in the field.
                             </p>
                         </div>
-                        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                        <Dialog open={isCreateOpen} onOpenChange={(open) => {
+                            setIsCreateOpen(open);
+
+                            if (!open) {
+                                setIsDragging(false);
+                                dragCounter.current = 0;
+                                createForm.reset();
+
+                                if (imagePreview) {
+                                    URL.revokeObjectURL(imagePreview);
+                                }
+
+                                setImagePreview(null);
+                            }
+                        }}>
                             <DialogTrigger asChild>
                                 <Button className="gap-2">
                                     <Plus className="h-4 w-4" />
@@ -178,15 +266,15 @@ export default function HvacModelsIndex() {
                                 </DialogHeader>
                                 <form onSubmit={submitCreate} className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">Brand</label>
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Brand</label>
                                         <select
-                                            className={`h-10 w-full rounded-md border px-3 text-sm ${createForm.errors.brand_id ? 'border-red-500' : 'border-slate-200'}`}
+                                            className={`h-10 w-full rounded-md border bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 text-sm ${createForm.errors.brand_id ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'}`}
                                             value={createForm.data.brand_id}
                                             onChange={(e) => createForm.setData('brand_id', e.target.value)}
                                         >
-                                            <option value="">Select brand</option>
+                                            <option value="" className="bg-white dark:bg-slate-900">Select brand</option>
                                             {brands.map((brand) => (
-                                                <option key={brand.id} value={brand.id}>
+                                                <option key={brand.id} value={brand.id} className="bg-white dark:bg-slate-900">
                                                     {brand.name}
                                                 </option>
                                             ))}
@@ -197,7 +285,7 @@ export default function HvacModelsIndex() {
                                     </div>
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700">Model name</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Model name</label>
                                             <Input
                                                 value={createForm.data.name}
                                                 onChange={(e) => createForm.setData('name', e.target.value)}
@@ -209,7 +297,7 @@ export default function HvacModelsIndex() {
                                             )}
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700">Model number</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Model number</label>
                                             <Input
                                                 value={createForm.data.model_number}
                                                 onChange={(e) => createForm.setData('model_number', e.target.value)}
@@ -217,7 +305,7 @@ export default function HvacModelsIndex() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700">Capacity (BTU)</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Capacity (BTU)</label>
                                             <Input
                                                 type="number"
                                                 value={createForm.data.capacity_btu}
@@ -226,7 +314,7 @@ export default function HvacModelsIndex() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700">Efficiency rating</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Efficiency rating</label>
                                             <Input
                                                 value={createForm.data.efficiency_rating}
                                                 onChange={(e) => createForm.setData('efficiency_rating', e.target.value)}
@@ -234,7 +322,7 @@ export default function HvacModelsIndex() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700">Power spec</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Power spec</label>
                                             <Input
                                                 value={createForm.data.power_spec}
                                                 onChange={(e) => createForm.setData('power_spec', e.target.value)}
@@ -242,7 +330,7 @@ export default function HvacModelsIndex() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium text-slate-700">Refrigerant type</label>
+                                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Refrigerant type</label>
                                             <Input
                                                 value={createForm.data.refrigerant_type}
                                                 onChange={(e) => createForm.setData('refrigerant_type', e.target.value)}
@@ -251,14 +339,72 @@ export default function HvacModelsIndex() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">Model image</label>
-                                        <Input
-                                            type="file"
-                                            accept="image/*"
-                                            ref={imageInputRef}
-                                            onChange={(e) => createForm.setData('image', e.target.files?.[0] ?? null)}
-                                            className={createForm.errors.image ? 'border-red-500' : ''}
-                                        />
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Model image</label>
+                                        <div
+                                            onDragEnter={handleDragEnter}
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
+                                            onClick={triggerFileInput}
+                                            className={`relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
+                                                isDragging
+                                                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/50'
+                                                    : 'border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 hover:border-indigo-400'
+                                            } ${createForm.errors.image ? 'border-red-500' : ''}`}
+                                        >
+                                            <Input
+                                                type="file"
+                                                accept="image/*"
+                                                ref={imageInputRef}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0] ?? null;
+                                                    createForm.setData('image', file);
+
+                                                    if (imagePreview) {
+                                                        URL.revokeObjectURL(imagePreview);
+                                                    }
+
+                                                    if (file) {
+                                                        setImagePreview(URL.createObjectURL(file));
+                                                    } else {
+                                                        setImagePreview(null);
+                                                    }
+                                                }}
+                                                className="hidden"
+                                            />
+                                            
+                                            {/* Preview Section */}
+                                            {createForm.data.image ? (
+                                                <div className="flex flex-col items-center gap-3 p-4 w-full pointer-events-none">
+                                                    {imagePreview && (
+                                                        <img 
+                                                            src={imagePreview} 
+                                                            alt="Model preview" 
+                                                            className="h-20 w-20 rounded-lg object-contain bg-white ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm"
+                                                        />
+                                                    )}
+                                                    <div className="flex items-center gap-2 rounded-full bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 pointer-events-auto shadow-sm">
+                                                        <span className="max-w-[200px] truncate font-medium">{createForm.data.image.name}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={clearImage}
+                                                            className="ml-1 rounded-full p-1 bg-white/50 dark:bg-black/20 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Click or drag to change image</p>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2 p-6 text-slate-500 dark:text-slate-400 pointer-events-none">
+                                                    <Upload className={`h-8 w-8 transition-colors ${isDragging ? 'text-indigo-500' : 'text-slate-400'}`} />
+                                                    <div className="text-center text-sm">
+                                                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">Click to upload</span> or drag and drop
+                                                    </div>
+                                                    <p className="text-xs text-slate-400">PNG, JPG, WEBP, SVG</p>
+                                                </div>
+                                            )}
+                                        </div>
                                         {createForm.errors.image && (
                                             <span className="text-xs text-red-500">{createForm.errors.image}</span>
                                         )}
@@ -279,12 +425,12 @@ export default function HvacModelsIndex() {
 
                 {/* Flash messages */}
                 {flash?.success && showSuccess ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
                         <span>{flash.success}</span>
                         <button
                             type="button"
-                            onClick={() => setShowSuccess(false)}
-                            className="rounded p-1 text-emerald-700/80 transition hover:text-emerald-900"
+                            onClick={() => setDismissedSuccess(flash?.success ?? null)}
+                            className="rounded p-1 text-emerald-700 dark:text-emerald-400/80 transition hover:text-emerald-900"
                             aria-label="Dismiss"
                         >
                             <X className="h-4 w-4" />
@@ -293,12 +439,12 @@ export default function HvacModelsIndex() {
                 ) : null}
 
                 {flash?.error && showError ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                         <span>{flash.error}</span>
                         <button
                             type="button"
-                            onClick={() => setShowError(false)}
-                            className="rounded p-1 text-red-700/80 transition hover:text-red-900"
+                            onClick={() => setDismissedError(flash?.error ?? null)}
+                            className="rounded p-1 text-red-700 dark:text-red-400/80 transition hover:text-red-900"
                             aria-label="Dismiss"
                         >
                             <X className="h-4 w-4" />
@@ -307,7 +453,7 @@ export default function HvacModelsIndex() {
                 ) : null}
 
                 {/* Filters */}
-                <Card className="border-0 bg-white/90 shadow-sm">
+                <Card className="border-0 bg-white dark:bg-slate-900/90 shadow-sm">
                     <CardHeader className="space-y-1">
                         <CardTitle className="text-base">Filter models</CardTitle>
                         <CardDescription>Search by name or model number and filter by brand.</CardDescription>
@@ -324,13 +470,13 @@ export default function HvacModelsIndex() {
                                 />
                             </div>
                             <select
-                                className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                                className="h-10 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-300"
                                 value={brandFilter}
                                 onChange={(e) => setBrandFilter(e.target.value)}
                             >
-                                <option value="">All brands</option>
+                                <option value="" className="bg-white dark:bg-slate-900">All brands</option>
                                 {brands.map((brand) => (
-                                    <option key={brand.id} value={brand.id}>
+                                    <option key={brand.id} value={brand.id} className="bg-white dark:bg-slate-900">
                                         {brand.name}
                                     </option>
                                 ))}
@@ -343,7 +489,7 @@ export default function HvacModelsIndex() {
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="gap-1 text-slate-500"
+                                    className="gap-1 text-slate-500 dark:text-slate-400"
                                     onClick={() => router.get('/hvac-models', {}, { replace: true })}
                                 >
                                     <X className="h-3.5 w-3.5" /> Clear
@@ -358,17 +504,17 @@ export default function HvacModelsIndex() {
                     data="models"
                     fallback={
                         <div className="space-y-2">
-                            <div className="h-16 animate-pulse rounded-md bg-gray-200" />
-                            <div className="h-16 animate-pulse rounded-md bg-gray-200" />
-                            <div className="h-16 animate-pulse rounded-md bg-gray-200" />
+                            <div className="h-16 animate-pulse rounded-md bg-gray-200 dark:bg-slate-800" />
+                            <div className="h-16 animate-pulse rounded-md bg-gray-200 dark:bg-slate-800" />
+                            <div className="h-16 animate-pulse rounded-md bg-gray-200 dark:bg-slate-800" />
                         </div>
                     }
                 >
                     {() => (
-                        <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+                        <div className="overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm">
                             <div className="overflow-x-auto">
                                 <table className="min-w-full text-sm">
-                                    <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
+                                    <thead className="border-b bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                                         <tr>
                                             <th className="px-4 py-4 text-left">Model</th>
                                             <th className="px-4 py-4 text-left">Brand</th>
@@ -382,7 +528,7 @@ export default function HvacModelsIndex() {
                                         {models?.data.map((model) => (
                                             <tr
                                                 key={model.id}
-                                                className="border-b transition-colors last:border-b-0 hover:bg-slate-50/50"
+                                                className="border-b transition-colors last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50"
                                             >
                                                 <td className="px-4 py-4">
                                                     <div className="flex items-center gap-3">
@@ -390,14 +536,14 @@ export default function HvacModelsIndex() {
                                                             <img
                                                                 src={model.image_path}
                                                                 alt={model.name}
-                                                                className="h-10 w-10 rounded-lg object-cover ring-1 ring-slate-200"
+                                                                className="h-10 w-10 rounded-lg object-cover ring-1 ring-slate-200 dark:ring-slate-800"
                                                             />
                                                         ) : (
-                                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-500">
+                                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                                                                 {model.name.slice(0, 2).toUpperCase()}
                                                             </div>
                                                         )}
-                                                        <p className="font-semibold text-slate-900">{model.name}</p>
+                                                        <p className="font-semibold text-slate-900 dark:text-white">{model.name}</p>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4">
@@ -407,22 +553,22 @@ export default function HvacModelsIndex() {
                                                         <span className="text-slate-400">—</span>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-4 text-slate-600">
+                                                <td className="px-4 py-4 text-slate-600 dark:text-slate-300">
                                                     {model.model_number ?? '—'}
                                                 </td>
-                                                <td className="px-4 py-4 text-slate-600">
+                                                <td className="px-4 py-4 text-slate-600 dark:text-slate-300">
                                                     {model.capacity_btu
                                                         ? `${model.capacity_btu.toLocaleString()} BTU`
                                                         : '—'}
                                                 </td>
-                                                <td className="px-4 py-4 text-slate-600">
+                                                <td className="px-4 py-4 text-slate-600 dark:text-slate-300">
                                                     {model.refrigerant_type ?? '—'}
                                                 </td>
                                                 <td className="px-4 py-4">
                                                     <div className="flex flex-wrap gap-2">
                                                         <Button asChild variant="outline" size="sm">
                                                             <Link
-                                                                href={`/hvac-models/${model.id}`}
+                                                                href={`/hvac-models/${model.slug}`}
                                                                 prefetch
                                                                 className="gap-2"
                                                             >
@@ -434,7 +580,7 @@ export default function HvacModelsIndex() {
                                                             type="button"
                                                             variant="outline"
                                                             size="sm"
-                                                            className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50"
+                                                            className="gap-1.5 border-red-200 dark:border-red-500/20 text-red-600 hover:bg-red-50 dark:bg-red-500/10"
                                                             onClick={() => openDeleteModal(model)}
                                                         >
                                                             <Trash2 className="h-3.5 w-3.5" />
@@ -448,11 +594,11 @@ export default function HvacModelsIndex() {
                                 </table>
 
                                 {models?.data.length === 0 ? (
-                                    <p className="p-6 text-sm text-slate-500">No HVAC models found.</p>
+                                    <p className="p-6 text-sm text-slate-500 dark:text-slate-400">No HVAC models found.</p>
                                 ) : null}
 
                                 {models?.links && models.links.length > 0 ? (
-                                    <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
+                                    <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
                                         {models.links.map((link, index) =>
                                             link.url ? (
                                                 <Link
@@ -461,14 +607,14 @@ export default function HvacModelsIndex() {
                                                     className={`rounded-full border px-3 py-1 transition ${
                                                         link.active
                                                             ? 'border-slate-900 bg-slate-900 text-white'
-                                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                                                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-400'
                                                     }`}
                                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                                 />
                                             ) : (
                                                 <span
                                                     key={`${link.label}-${index}`}
-                                                    className="rounded-full border border-slate-200 px-3 py-1 text-slate-400"
+                                                    className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-slate-400"
                                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                                 />
                                             ),
@@ -486,6 +632,7 @@ export default function HvacModelsIndex() {
                 open={isDeleteOpen}
                 onOpenChange={(open) => {
                     setIsDeleteOpen(open);
+
                     if (!open) {
                         setDeleteTarget(null);
                     }

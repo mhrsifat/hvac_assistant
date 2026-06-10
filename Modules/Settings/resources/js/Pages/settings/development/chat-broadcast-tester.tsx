@@ -3,28 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout';
-import { configureEcho, echo, useConnectionStatus, useEcho } from '@laravel/echo-react';
+import { configureEcho, echo, useConnectionStatus } from '@laravel/echo-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type ConversationUpdatedPayload = {
-  chat_id: number;
-  chat_title: string;
-  message_id: number;
-  sender_id: number | null;
-  sender_role: string;
-  content: string;
-  attachment_path: string | null;
-  created_at: string | null;
-};
 
-type ChatCreateResponse = {
-  chat: {
-    id: number;
-    user?: {
-      username?: string | null;
-    } | null;
-  };
-};
 
 type LogEntry = {
   id: number;
@@ -69,7 +51,9 @@ function ChannelListener({
   const lastStatusRef = useRef<string>('');
 
   useEffect(() => {
-    if (!channelName) return;
+    if (!channelName) {
+return;
+}
 
     appendLog('info', 'Attempting to subscribe...', channelName);
 

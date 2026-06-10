@@ -22,6 +22,14 @@ class HvacModelController extends Controller
     {
         $models = HvacModel::query()
             ->with('brand')
+            // Filter by brand slug if provided
+            ->when($request->filled('brand_slug'), function ($query) use ($request) {
+                $brandSlug = $request->input('brand_slug');
+                $query->whereHas('brand', function ($brandQuery) use ($brandSlug) {
+                    $brandQuery->where('slug', $brandSlug);
+                });
+            })
+            // Search functionality
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->input('search');
                 $query->where(function ($q) use ($search) {

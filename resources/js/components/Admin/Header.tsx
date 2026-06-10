@@ -8,15 +8,8 @@ import type { Dispatch, SetStateAction } from 'react';
 import GlobalSearch from '@/components/Admin/GlobalSearch';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Button } from '@/components/ui/button';
-import {
-    adminMenuSections,
-    filterAdminMenuSectionsByAccess,
-    flattenAdminMenuSectionsForSearch,
-} from '@/Config/admin/menu';
-import { logout } from '@/routes';
-
+import { dashboard, logout } from '@/routes';
 type HeaderProps = {
-    isMiniSidebar: boolean;
     setIsMiniSidebar: Dispatch<SetStateAction<boolean>>;
     setIsMobileOpen: Dispatch<SetStateAction<boolean>>;
 };
@@ -38,7 +31,6 @@ type HeaderPageProps = {
 };
 
 export default function Header({
-    isMiniSidebar,
     setIsMiniSidebar,
     setIsMobileOpen,
 }: HeaderProps) {
@@ -47,19 +39,6 @@ export default function Header({
     } = usePage<HeaderPageProps>();
     const displayName = auth?.user?.first_name ?? auth?.user?.name ?? 'Admin';
     const systemName = system?.system_name ?? 'Admin Dashboard';
-    const userRoles = Array.isArray(auth?.roles) ? auth.roles : [];
-    const userPermissions = Array.isArray(auth?.permissions)
-        ? auth.permissions
-        : [];
-
-    const authorizedSections = filterAdminMenuSectionsByAccess(
-        adminMenuSections,
-        {
-            userRoles,
-            userPermissions,
-        },
-    );
-    const searchItems = flattenAdminMenuSectionsForSearch(authorizedSections);
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -83,16 +62,47 @@ export default function Header({
         };
     }, []);
 
+    // FIX: Perfect resize logic utilizing matchMedia to sync exactly with Tailwind breakpoints
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(min-width: 1024px)');
+        let previouslyDesktop = mediaQuery.matches;
+
+        const handleResize = (): void => {
+            const isNowDesktop = mediaQuery.matches;
+
+            if (previouslyDesktop && !isNowDesktop) {
+                // Went desktop → mobile
+                // MUST set isMiniSidebar to true, otherwise the sidebar stays permanently open on mobile
+                setIsMiniSidebar(true);
+                setIsMobileOpen(false);
+            } else if (!previouslyDesktop && isNowDesktop) {
+                // Went mobile → desktop
+                // MUST set isMiniSidebar to false, so it shows up normally on large screens
+                setIsMiniSidebar(false);
+                setIsMobileOpen(false);
+            }
+
+            previouslyDesktop = isNowDesktop;
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [setIsMiniSidebar, setIsMobileOpen]);
+
     return (
-        <header className="sticky top-0 z-40 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-[#202124]">
+        <header className="sticky top-0 z-50 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-[#202124]">
             <div className="flex h-16 items-center gap-2 px-3 sm:px-4 lg:px-6">
                 <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                        if (window.innerWidth >= 1024) {
-                            setIsMiniSidebar(!isMiniSidebar);
+                        // Use matchMedia here as well for consistency
+                        if (window.matchMedia('(min-width: 1024px)').matches) {
+                            setIsMiniSidebar((prev) => !prev);
                         } else {
                             setIsMobileOpen((prev) => !prev);
                         }
@@ -104,26 +114,26 @@ export default function Header({
                 </Button>
 
                 <div className="flex items-center gap-2 pr-2">
-                    <span className="flex items-center gap-2 text-xl font-semibold text-gray-700 dark:text-gray-100">
+                    <Link
+                        href={dashboard.url()}
+                        className="flex items-center gap-2 text-xl font-semibold text-gray-700 dark:text-gray-100 hover:opacity-80 transition-opacity"
+                    >
                         <AppLogoIcon className="h-6 w-6 fill-orange-500" />
                         <span className="hidden sm:inline">
                             {systemName}
                         </span>
-                    </span>
+                    </Link>
                 </div>
 
-                {/* <Button
-          type="button"
-          variant="outline"
-          className="hidden items-center gap-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#3c4043] text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#4a4d51] md:inline-flex"
-        >
-          <AppLogoIcon className="h-4 w-4 fill-orange-500" />
-          smartAgro
-        </Button> */}
+                <div className="flex w-full items-center">
+                    <div className="flex-[2]">
+                        {/* left side */}
+                    </div>
 
-                {/* <div className="ml-4 hidden min-w-0 flex-1 md:block">
-                    <GlobalSearch items={searchItems} />
-                </div> */}
+                    <div className="ml-4 hidden md:flex flex-[3] min-w-0">
+                        <GlobalSearch />
+                    </div>
+                </div>
 
                 <Button
                     type="button"
@@ -142,23 +152,6 @@ export default function Header({
                 </Button>
 
                 <div className="ml-auto flex items-center gap-1">
-                    {/* <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                            setIsNotificationOpen((isOpen) => !isOpen);
-                            setIsProfileOpen(false);
-                        }}
-                        aria-expanded={isNotificationOpen}
-                        aria-haspopup="menu"
-                        aria-controls="admin-notification-menu"
-                        className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100"
-                    >
-                        <span className="sr-only">Notifications</span>
-                        <BellIcon className="h-5 w-5" aria-hidden="true" />
-                    </Button> */}
-
                     <Button
                         type="button"
                         variant="ghost"
@@ -190,7 +183,7 @@ export default function Header({
 
             {isMobileSearchOpen && (
                 <div className="border-t border-gray-200 px-3 py-3 md:hidden dark:border-gray-700">
-                    <GlobalSearch items={searchItems} />
+                    <GlobalSearch />
                 </div>
             )}
 
@@ -202,29 +195,6 @@ export default function Header({
                         setIsNotificationOpen(false);
                     }}
                 ></div>
-            )}
-
-            {isNotificationOpen && (
-                <div
-                    id="admin-notification-menu"
-                    className="absolute right-14 z-40 mt-1 w-[22rem] overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-[#3c4043]"
-                >
-                    <div className="border-b border-gray-200 px-4 py-3 text-lg font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-100">
-                        Notifications
-                    </div>
-                    <div className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        No notifications
-                    </div>
-                    <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-700">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="border-[#1a73e8] text-[#1a73e8] hover:bg-blue-50 dark:border-[#8ab4f8] dark:text-[#8ab4f8] dark:hover:bg-blue-900/30"
-                        >
-                            See all notifications
-                        </Button>
-                    </div>
-                </div>
             )}
 
             {isProfileOpen && (
@@ -261,29 +231,7 @@ export default function Header({
                         </div>
                     </div>
 
-                    {/* <div className="border-y border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-[#303134]">
-                        <p className="text-base font-medium text-gray-800 dark:text-gray-200">
-                            {displayName}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {auth?.user?.email ?? 'admin@example.com'}
-                        </p>
-                    </div> */}
-
-                    {/* <div className="space-y-3 p-4 text-sm text-gray-700 dark:text-gray-300">
-                        <p>Google Cloud Privacy</p>
-                        <p>Google Cloud Terms of Service</p>
-                    </div> */}
-
                     <div className="flex items-center justify-end border-t border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-[#303134]">
-                        {/* <Button
-                            type="button"
-                            variant="outline"
-                            className="border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-[#3c4043]"
-                        >
-                            Add account
-                        </Button> */}
-
                         <Button
                             variant="outline"
                             className="border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-transparent dark:text-gray-200 dark:hover:bg-[#3c4043]"

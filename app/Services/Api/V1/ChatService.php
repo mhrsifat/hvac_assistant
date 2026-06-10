@@ -40,6 +40,7 @@ class ChatService
     public function listChats($user, $request)
     {
         $query = Chat::with('latestMessage')->where('user_id', $user->id);
+        $perPage = $this->resolvePerPage($request, 15);
 
         if ($request->has('hvac_model_slug')) {
             $query->whereHas('hvacModel', function ($q) use ($request) {
@@ -60,7 +61,7 @@ class ChatService
             });
         }
 
-        return ChatResource::collection($query->latest('updated_at')->paginate(15));
+        return ChatResource::collection($query->latest('updated_at')->paginate($perPage));
     }
 
     public function sendMessage($user, $chatSlug, $request)
@@ -155,16 +156,29 @@ class ChatService
         $chat = Chat::where('slug', $chatSlug)
             ->where('user_id', $user->id)
             ->firstOrFail();
+        $perPage = $this->resolvePerPage($request, 20);
+
         if (! $chat) {
             throw new \Exception('Chat not found');
         }
 
-        $messages = $chat->messages()->latest()->paginate(20);
+        $messages = $chat->messages()->latest()->paginate($perPage);
 
         return [
             'messages' => MessageResource::collection($messages),
             'is_analyzing' => Cache::get("chat_{$chatSlug}_analyzing", false),
         ];
+    }
+
+    protected function resolvePerPage($request, int $default): int
+    {
+        $perPage = (int) $request->input('per_page', $default);
+
+        if ($perPage < 1) {
+            return $default;
+        }
+
+        return min($perPage, 100);
     }
 
     public function deleteChat($user, $chatSlug)

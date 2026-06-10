@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -10,7 +11,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified', 'role:admin|super-admin'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // Route::inertia('chat-broadcast-tester', 'tools/chat-broadcast-tester')->name('chat.broadcast-tester');
 });
 

@@ -11,7 +11,6 @@ import {
     UserIcon,
     UsersIcon,
     WindowIcon,
-    WrenchIcon,
 } from '@heroicons/react/24/outline';
 import type { InertiaLinkProps } from '@inertiajs/react';
 import { FileText, Scale } from 'lucide-react';
@@ -34,6 +33,7 @@ export type AdminMenuItem = {
     relatedRoutes?: string[];
     children?: AdminMenuItem[];
     helperLabel?: string;
+    description?: string;
 };
 
 export type AdminMenuItemColors = {
@@ -59,13 +59,6 @@ export type AdminMenuSection = {
 type AccessContext = {
     userRoles: string[];
     userPermissions: string[];
-};
-
-export type AdminSearchItem = {
-    id: string;
-    title: string;
-    href: AdminMenuHref;
-    section: string;
 };
 
 export const adminMenuSections: AdminMenuSection[] = [
@@ -100,18 +93,28 @@ export const adminMenuSections: AdminMenuSection[] = [
                 title: 'Brands',
                 href: '/brands',
                 icon: WindowIcon,
+                relatedRoutes: [
+                    '/brands/[^/]+',
+                ],
             },
             {
                 id: 'models',
                 title: 'Models',
                 href: '/hvac-models',
                 icon: SquaresPlusIcon,
+                relatedRoutes: [
+                    '/hvac-models/[^/]+',
+                ],
             },
             {
                 id: 'chats',
                 title: 'Chats',
                 href: '/chats',
                 icon: ClockIcon,
+                relatedRoutes: [
+                    '/chats',
+                    '/chats/[^/]+',
+                ],
             },
         ],
     },
@@ -271,35 +274,31 @@ export const adminMenuSections: AdminMenuSection[] = [
                     },
                 ],
             },
-            {
-                id: 'development-tools',
-                title: 'Development',
-                href: null,
-                icon: WrenchIcon,
-                permissions: ['manage settings'],
-                roles: ['super-admin', 'admin'],
-                children: [
-                    {
-                        id: 'development-chat-broadcast-tester',
-                        title: 'Chat broadcast tester',
-                        href: '/settings/development/chat-broadcast-tester',
-                        permissions: ['manage settings'],
-                        roles: ['super-admin', 'admin'],
-                    },
-                    {
-                        id: 'development-db-manager',
-                        title: 'Database Manager',
-                        href: '/settings/development/db-manager',
-                        permissions: ['manage settings'],
-                        roles: ['super-admin', 'admin'],
-                    },
-                ],
-            },
-        ],        
-        footerAction: {
-            label: 'View all Models',
-            href: '/hvac-models',
-        },
+            // {
+            //     id: 'development-tools',
+            //     title: 'Development',
+            //     href: null,
+            //     icon: WrenchIcon,
+            //     permissions: ['manage settings'],
+            //     roles: ['super-admin', 'admin'],
+            //     children: [
+            //         {
+            //             id: 'development-chat-broadcast-tester',
+            //             title: 'Chat broadcast tester',
+            //             href: '/settings/development/chat-broadcast-tester',
+            //             permissions: ['manage settings'],
+            //             roles: ['super-admin', 'admin'],
+            //         },
+            //         {
+            //             id: 'development-db-manager',
+            //             title: 'Database Manager',
+            //             href: '/settings/development/db-manager',
+            //             permissions: ['manage settings'],
+            //             roles: ['super-admin', 'admin'],
+            //         },
+            //     ],
+            // },
+        ],
     },
 ];
 
@@ -372,39 +371,6 @@ export const filterAdminMenuSectionsByAccess = (
             };
         })
         .filter((section): section is AdminMenuSection => section !== null);
-};
-
-export const flattenAdminMenuForSearch = (
-    items: AdminMenuItem[],
-    parents: string[] = [],
-): AdminSearchItem[] => {
-    return items.flatMap((item) => {
-        const section = [...parents, item.title].join(' / ');
-        const currentItem: AdminSearchItem[] = item.href
-            ? [
-                  {
-                      id: item.id,
-                      title: item.title,
-                      href: item.href,
-                      section,
-                  },
-              ]
-            : [];
-
-        const childItems = item.children
-            ? flattenAdminMenuForSearch(item.children, [...parents, item.title])
-            : [];
-
-        return [...currentItem, ...childItems];
-    });
-};
-
-export const flattenAdminMenuSectionsForSearch = (
-    sections: AdminMenuSection[],
-): AdminSearchItem[] => {
-    return sections.flatMap((section) =>
-        flattenAdminMenuForSearch(section.items, [section.title]),
-    );
 };
 
 export const adminMenu = adminMenuSections.flatMap((section) => section.items);

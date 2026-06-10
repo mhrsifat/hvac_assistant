@@ -11,14 +11,14 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
 
-        Route::get('{hvacModel}', 'show')->name('show');
-        Route::patch('{hvacModel}', 'update')->name('update');
-        Route::delete('{hvacModel}', 'destroy')->name('destroy');
+        Route::get('{hvacModel:slug}', 'show')->name('show');
+        Route::patch('{hvacModel:slug}', 'update')->name('update');
+        Route::delete('{hvacModel:slug}', 'destroy')->name('destroy');
 
-        Route::post('{hvacModel}/documents', 'storeDocument')->name('documents.store');
-        Route::post('{hvacModel}/documents/{document}/feed', 'feedDocument')->name('documents.feed');
-        Route::delete('{hvacModel}/documents/{document}', 'destroyDocument')->name('documents.destroy');
+        Route::post('{hvacModel:slug}/documents', 'storeDocument')->name('documents.store');
+        Route::post('{hvacModel:slug}/documents/{document}/feed', 'feedDocument')->name('documents.feed');
+        Route::delete('{hvacModel:slug}/documents/{document}', 'destroyDocument')->name('documents.destroy');
 
-        Route::post('{hvacModel}/error-codes', 'storeErrorCode')->name('error-codes.store');
-        Route::delete('{hvacModel}/error-codes/{errorCode}', 'destroyErrorCode')->name('error-codes.destroy');
+        Route::post('{hvacModel:slug}/error-codes', 'storeErrorCode')->name('error-codes.store');
+        Route::delete('{hvacModel:slug}/error-codes/{errorCode}', 'destroyErrorCode')->name('error-codes.destroy');
     });

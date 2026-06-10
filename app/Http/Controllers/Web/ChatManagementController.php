@@ -46,14 +46,14 @@ class ChatManagementController extends Controller
     public function show(Chat $chat): Response
     {
         $chat->load([
-            'user:id,first_name,last_name,email,username',
+            'user:id,first_name,last_name,email,username,avatar',
             'user.subscriptions' => function ($query) {
                 $query->whereIn('status', ['active', 'trialing'])
                     ->with('plan:id,name')
                     ->latest()
                     ->limit(1);
             },
-            'hvacModel:id,name,model_number,brand_id',
+            'hvacModel:id,slug,name,model_number,brand_id',
             'hvacModel.brand:id,name,logo_path',
         ]);
         $chat->loadCount('messages');
@@ -62,7 +62,7 @@ class ChatManagementController extends Controller
             'chat' => $chat,
             'messages' => Inertia::defer(fn () => $chat
                 ->messages()
-                ->with('sender:id,first_name,last_name,email')
+                ->with('sender:id,first_name,last_name,email,avatar')
                 ->latest()
                 ->get()),
         ]);

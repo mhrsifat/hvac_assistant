@@ -2,6 +2,7 @@
 
 namespace App\Services\Web;
 
+use App\Models\Brand;
 use App\Models\Chat;
 use App\Models\HvacModel;
 use App\Models\User;
@@ -14,6 +15,9 @@ class ChatManagementService
     {
         return User::query()
             ->select(['id', 'first_name', 'last_name', 'email', 'avatar'])
+            ->whereDoesntHave('roles', function ($query) {
+                $query->whereIn('name', ['admin', 'super-admin']);
+            })
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
@@ -30,7 +34,7 @@ class ChatManagementService
 
     public function brandOptions(): Collection
     {
-        return \App\Models\Brand::query()
+        return Brand::query()
             ->select(['id', 'name'])
             ->orderBy('name')
             ->get();

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\EmbedErrorCodeJob;
+use App\Jobs\FeedDocumentToAiJob;
 use App\Models\ErrorCode;
 use App\Models\HvacModel;
 use App\Models\SupportDocument;
@@ -10,6 +12,7 @@ use App\Services\Web\HvacModelService;
 use App\Services\Web\SupportDocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,7 +45,7 @@ class HvacModelController extends Controller
 
     public function show(HvacModel $hvacModel): Response
     {
-        $hvacModel->load('brand:id,name,logo_path');
+        $hvacModel->load('brand:id,slug,name,logo_path');
         $hvacModel->loadCount(['documents', 'errorCodes']);
 
         return Inertia::render('hvac-models/show', [
@@ -115,16 +118,33 @@ class HvacModelController extends Controller
     public function storeDocument(Request $request, HvacModel $hvacModel): RedirectResponse
     {
         $request->validate([
-            'document' => ['required', 'file', 'max:20480', 'mimes:pdf,docx,xlsx,csv,txt,jpg,jpeg,png,webp,gif'],
+            'documents' => ['required', 'array', 'min:1'],
+            'documents.*' => ['required', 'file', 'max:20480', 'mimes:pdf,docx,xlsx,csv,txt,jpg,jpeg,png,webp,gif'],
+        ], [
+            'documents.required' => 'Please upload at least one document.',
+            'documents.*.required' => 'Please upload a document.',
+            'documents.*.file' => 'The uploaded file must be a valid file.',
+            'documents.*.max' => 'The document size must not exceed 20 MB.',
+            'documents.*.mimes' => 'Unsupported file type. Allowed types: pdf, docx, xlsx, csv, txt, jpg, jpeg, png, webp, gif.',
         ]);
 
-        $file = $request->file('document');
+        try {
+            $files = $request->file('documents');
 
-        if ($file) {
-            $this->supportDocumentService->createForModel($hvacModel, $file);
+            foreach ($files as $file) {
+                $this->supportDocumentService->createForModel($hvacModel, $file);
+            }
+
+            return back()->with('success', 'Model documents uploaded successfully.');
+        } catch (\Throwable $exception) {
+            Log::error('Failed to upload model documents', [
+                'model_id' => $hvacModel->id,
+                'error_message' => $exception->getMessage(),
+                'error_type' => $exception::class,
+            ]);
+
+            return back()->with('error', 'Failed to upload documents. Please try again.');
         }
-
-        return back()->with('success', 'Model document uploaded successfully.');
     }
 
     public function destroyDocument(HvacModel $hvacModel, SupportDocument $document): RedirectResponse
@@ -156,7 +176,7 @@ class HvacModelController extends Controller
             'is_processing' => true,
         ])->save();
 
-        \App\Jobs\FeedDocumentToAiJob::dispatch($document);
+        FeedDocumentToAiJob::dispatch($document);
 
         return back()->with('success', 'Document is being fed to AI in the background. This may take a few moments.');
     }
@@ -177,7 +197,7 @@ class HvacModelController extends Controller
             'resolution_steps' => $validated['resolution_steps'],
         ]);
 
-        \App\Jobs\EmbedErrorCodeJob::dispatch($errorCode);
+        EmbedErrorCodeJob::dispatch($errorCode);
 
         return back()->with('success', 'Model error code added and sent to AI successfully.');
     }

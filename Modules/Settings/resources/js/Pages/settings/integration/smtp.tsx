@@ -1,3 +1,4 @@
+import { ConfirmSaveDialog } from '@/components/confirm-save-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Transition } from '@headlessui/react';
 import { Form, Head } from '@inertiajs/react';
 import { CheckCircle2, Mail } from 'lucide-react';
 import { useState, useRef } from 'react';
-import { ConfirmSaveDialog } from '@/components/confirm-save-dialog';
 
 type SmtpSettings = {
   mail_mailer: string;

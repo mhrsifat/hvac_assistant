@@ -20,6 +20,7 @@ import AdminLayout from '@/layouts/AdminLayout';
 type Brand = {
   id: number;
   name: string;
+  slug: string;
   logo_path: string | null;
   created_at: string;
   hvac_models_count: number;
@@ -46,9 +47,10 @@ type ErrorCode = {
   resolution_steps: string;
 };
 
-type HvacModelSummary = {
+type HvacModel = {
   id: number;
   name: string;
+  slug: string;
   model_number: string | null;
   capacity_btu: number | null;
   documents_count?: number;
@@ -70,7 +72,7 @@ type BrandShowProps = {
   brand: Brand;
   documents?: SupportDocument[];
   errorCodes?: PaginatedResponse<ErrorCode>;
-  models?: PaginatedResponse<HvacModelSummary>;
+  models?: PaginatedResponse<HvacModel>;
   flash?: {
     success?: string;
     error?: string;
@@ -98,8 +100,10 @@ const formatFileSize = (size: number): string => {
 
 export default function BrandShow() {
   const { brand, documents, errorCodes, models, flash } = usePage<BrandShowProps>().props;
-  const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
-  const [showError, setShowError] = useState(Boolean(flash?.error));
+  const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
+  const showSuccess = Boolean(flash?.success) && flash?.success !== dismissedSuccess;
+  const showError = Boolean(flash?.error) && flash?.error !== dismissedError;
   const [isDocumentOpen, setIsDocumentOpen] = useState(false);
   const [isErrorCodeOpen, setIsErrorCodeOpen] = useState(false);
   const [isFeedOpen, setIsFeedOpen] = useState(false);
@@ -127,12 +131,6 @@ export default function BrandShow() {
     resolution_steps: '',
   });
 
-  useEffect(() => {
-    setShowSuccess(Boolean(flash?.success));
-  }, [flash?.success]);
-  useEffect(() => {
-    setShowError(Boolean(flash?.error));
-  }, [flash?.error]);
 
   // 100% Seamless Silent Polling Every 5 Seconds (No WebSockets)
   useEffect(() => {
@@ -183,7 +181,7 @@ export default function BrandShow() {
 
   const submitDocument = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    documentForm.post(`/brands/${brand.id}/documents`, {
+    documentForm.post(`/brands/${brand.slug}/documents`, {
       forceFormData: true,
       preserveScroll: true,
       onSuccess: () => {
@@ -233,7 +231,7 @@ export default function BrandShow() {
 
   const submitErrorCode = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    errorCodeForm.post(`/brands/${brand.id}/error-codes`, {
+    errorCodeForm.post(`/brands/${brand.slug}/error-codes`, {
       preserveScroll: true,
       onSuccess: () => {
         errorCodeForm.reset();
@@ -243,7 +241,7 @@ export default function BrandShow() {
   };
 
   const openDeleteBrandModal = () => setIsDeleteBrandOpen(true);
-  const confirmDeleteBrand = () => router.delete(`/brands/${brand.id}`, { preserveScroll: true, onSuccess: () => setIsDeleteBrandOpen(false) });
+  const confirmDeleteBrand = () => router.delete(`/brands/${brand.slug}`, { preserveScroll: true, onSuccess: () => setIsDeleteBrandOpen(false) });
   const openDeleteDocumentModal = (doc: SupportDocument) => {
     setDeleteDocumentTarget(doc); setIsDeleteDocumentOpen(true);
   };
@@ -252,7 +250,7 @@ export default function BrandShow() {
       return;
     }
 
-    router.delete(`/brands/${brand.id}/documents/${deleteDocumentTarget.id}`, {
+    router.delete(`/brands/${brand.slug}/documents/${deleteDocumentTarget.id}`, {
       preserveScroll: true, onSuccess: () => {
         setIsDeleteDocumentOpen(false); setDeleteDocumentTarget(null);
       }
@@ -266,7 +264,7 @@ export default function BrandShow() {
       return;
     }
 
-    router.post(`/brands/${brand.id}/documents/${feedTarget.id}/feed`, {}, {
+    router.post(`/brands/${brand.slug}/documents/${feedTarget.id}/feed`, {}, {
       preserveScroll: true, onSuccess: () => {
         setIsFeedOpen(false); setFeedTarget(null);
       }
@@ -280,7 +278,7 @@ export default function BrandShow() {
       return;
     }
 
-    router.delete(`/brands/${brand.id}/error-codes/${deleteErrorCodeTarget.id}`, {
+    router.delete(`/brands/${brand.slug}/error-codes/${deleteErrorCodeTarget.id}`, {
       preserveScroll: true, onSuccess: () => {
         setIsDeleteErrorCodeOpen(false); setDeleteErrorCodeTarget(null);
       }
@@ -292,28 +290,28 @@ export default function BrandShow() {
       <Head title={`${brand.name} Brand`} />
       <div className="space-y-8">
         {/* Header section */}
-        <section className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm">
+        <section className="relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 p-6 shadow-sm">
           <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-indigo-100/80 blur-3xl" />
           <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-emerald-100/80 blur-3xl" />
           <div className="relative space-y-4">
-            <Link href="/brands" className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+            <Link href="/brands" className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-white">
               <ArrowLeft className="h-4 w-4" />
               Back to brands
             </Link>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
                 {brand.logo_path ? (
-                  <img src={brand.logo_path} alt={brand.name} className="h-16 w-16 rounded-2xl object-cover ring-1 ring-slate-200" />
+                  <img src={brand.logo_path} alt={brand.name} className="h-16 w-16 rounded-2xl object-cover ring-1 ring-slate-200 dark:ring-slate-800" />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-lg font-semibold text-slate-500">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-lg font-semibold text-slate-500 dark:text-slate-400">
                     {brand.name.slice(0, 2).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Brand profile</p>
-                  <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{brand.name}</h1>
-                  <p className="text-sm text-slate-600">Shared documents and error code library for the brand.</p>
-                  <p className="text-xs text-slate-500">Created {new Date(brand.created_at).toLocaleDateString()}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Brand profile</p>
+                  <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{brand.name}</h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">Shared documents and error code library for the brand.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Created {new Date(brand.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -335,7 +333,7 @@ export default function BrandShow() {
                     </DialogHeader>
                     <form onSubmit={submitDocument} className="space-y-4">
                       <div
-                        className={`relative flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors ${dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 bg-slate-50'} hover:border-indigo-400`}
+                        className={`relative flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors ${dragActive ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10' : 'border-slate-300 bg-slate-50 dark:bg-slate-800/50'} hover:border-indigo-400`}
                         onDragEnter={handleDrag}
                         onDragLeave={handleDrag}
                         onDragOver={handleDrag}
@@ -343,7 +341,7 @@ export default function BrandShow() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Upload className="mb-1 h-8 w-8 text-slate-400" />
-                        <p className="text-sm text-slate-600">Drag files here or click to browse</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">Drag files here or click to browse</p>
                         <p className="text-xs text-slate-400">PDF, DOCX, XLSX, CSV, TXT, images</p>
                         <Input type="file" multiple accept=".pdf,.docx,.xlsx,.csv,.txt,image/*" ref={fileInputRef} onChange={handleFileInput} className="hidden" />
                       </div>
@@ -351,7 +349,7 @@ export default function BrandShow() {
                       {documentForm.data.documents.length > 0 && (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium uppercase tracking-wider text-slate-500">
+                            <label className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                               {documentForm.data.documents.length} file(s) selected
                             </label>
                             <Button type="button" variant="ghost" size="sm" onClick={() => {
@@ -362,8 +360,8 @@ export default function BrandShow() {
                           </div>
                           <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto rounded-md border p-2">
                             {documentForm.data.documents.map((file, idx) => (
-                              <div key={idx} className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs">
-                                <FileText className="h-3 w-3 text-slate-500" />
+                              <div key={idx} className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1 text-xs">
+                                <FileText className="h-3 w-3 text-slate-500 dark:text-slate-400" />
                                 <span className="max-w-[150px] truncate">{file.name}</span>
                                 <span className="text-slate-400">{formatFileSize(file.size)}</span>
                                 {uploadErrors[file.name] && <AlertCircle className="h-3 w-3 text-amber-600" title={uploadErrors[file.name]} />}
@@ -375,7 +373,7 @@ export default function BrandShow() {
                       )}
 
                       {Object.keys(uploadErrors).length > 0 && (
-                        <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-800">
+                        <div className="rounded-md border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-2 text-sm text-amber-800">
                           <div className="flex items-center justify-between">
                             <span>{Object.keys(uploadErrors).length} file(s) failed validation.</span>
                             <Button type="button" variant="ghost" size="sm" onClick={() => setShowUploadErrorDialog(true)}>Show details</Button>
@@ -397,7 +395,7 @@ export default function BrandShow() {
                 <Dialog open={showUploadErrorDialog} onOpenChange={setShowUploadErrorDialog}>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader><DialogTitle>Upload errors</DialogTitle><DialogDescription>Details why some files were rejected.</DialogDescription></DialogHeader>
-                    <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded bg-slate-100 p-3 text-xs">{fullUploadErrorText}</pre>
+                    <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded bg-slate-100 dark:bg-slate-800 p-3 text-xs">{fullUploadErrorText}</pre>
                     <DialogFooter><Button onClick={() => setShowUploadErrorDialog(false)}>Close</Button></DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -412,11 +410,11 @@ export default function BrandShow() {
                 }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Feed document to AI</DialogTitle><DialogDescription>Process document and use AI tokens.</DialogDescription></DialogHeader>
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <div className="rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-900">
                       <div className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4" />Warning</div>
                       <p className="mt-1 text-sm">Feeding a document to AI will consume tokens and may take a few moments.</p>
                     </div>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{feedTarget?.original_name ?? 'Selected document'}</div>
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{feedTarget?.original_name ?? 'Selected document'}</div>
                     <DialogFooter><Button variant="outline" onClick={() => setIsFeedOpen(false)}>Cancel</Button><Button onClick={confirmFeed}>Feed to AI</Button></DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -440,7 +438,7 @@ export default function BrandShow() {
                 }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Delete document</DialogTitle><DialogDescription>Permanently remove document from brand.</DialogDescription></DialogHeader>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{deleteDocumentTarget?.original_name ?? 'Selected document'}</div>
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{deleteDocumentTarget?.original_name ?? 'Selected document'}</div>
                     <DialogFooter><Button variant="outline" onClick={() => setIsDeleteDocumentOpen(false)}>Cancel</Button><Button variant="destructive" onClick={confirmDeleteDocument}>Delete document</Button></DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -455,7 +453,7 @@ export default function BrandShow() {
                 }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader><DialogTitle>Delete error code</DialogTitle><DialogDescription>Permanently remove error code entry.</DialogDescription></DialogHeader>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{deleteErrorCodeTarget?.code ?? 'Selected error code'}</div>
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{deleteErrorCodeTarget?.code ?? 'Selected error code'}</div>
                     <DialogFooter><Button variant="outline" onClick={() => setIsDeleteErrorCodeOpen(false)}>Cancel</Button><Button variant="destructive" onClick={confirmDeleteErrorCode}>Delete error code</Button></DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -467,18 +465,18 @@ export default function BrandShow() {
                     <DialogHeader><DialogTitle>Add brand error code</DialogTitle><DialogDescription>Capture meaning and fix steps.</DialogDescription></DialogHeader>
                     <form onSubmit={submitErrorCode} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Error code</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Error code</label>
                         <Input value={errorCodeForm.data.code} onChange={(e) => errorCodeForm.setData('code', e.target.value)} placeholder="E03" className={errorCodeForm.errors.code ? 'border-red-500' : ''} />
                         {errorCodeForm.errors.code && <span className="text-xs text-red-500">{errorCodeForm.errors.code}</span>}
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Description</label>
-                        <textarea value={errorCodeForm.data.description} onChange={(e) => errorCodeForm.setData('description', e.target.value)} className={`min-h-[90px] w-full rounded-md border px-3 py-2 text-sm ${errorCodeForm.errors.description ? 'border-red-500' : 'border-slate-200'}`} placeholder="What the code indicates" />
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+                        <textarea value={errorCodeForm.data.description} onChange={(e) => errorCodeForm.setData('description', e.target.value)} className={`min-h-[90px] w-full rounded-md border px-3 py-2 text-sm ${errorCodeForm.errors.description ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'}`} placeholder="What the code indicates" />
                         {errorCodeForm.errors.description && <span className="text-xs text-red-500">{errorCodeForm.errors.description}</span>}
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Resolution steps</label>
-                        <textarea value={errorCodeForm.data.resolution_steps} onChange={(e) => errorCodeForm.setData('resolution_steps', e.target.value)} className={`min-h-[110px] w-full rounded-md border px-3 py-2 text-sm ${errorCodeForm.errors.resolution_steps ? 'border-red-500' : 'border-slate-200'}`} placeholder="Step-by-step plan" />
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Resolution steps</label>
+                        <textarea value={errorCodeForm.data.resolution_steps} onChange={(e) => errorCodeForm.setData('resolution_steps', e.target.value)} className={`min-h-[110px] w-full rounded-md border px-3 py-2 text-sm ${errorCodeForm.errors.resolution_steps ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'}`} placeholder="Step-by-step plan" />
                         {errorCodeForm.errors.resolution_steps && <span className="text-xs text-red-500">{errorCodeForm.errors.resolution_steps}</span>}
                       </div>
                       <DialogFooter><Button type="submit" disabled={errorCodeForm.processing}>{errorCodeForm.processing ? 'Saving...' : 'Save error code'}</Button></DialogFooter>
@@ -494,15 +492,15 @@ export default function BrandShow() {
 
         {/* Flash messages */}
         {flash?.success && showSuccess && (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
             <span>{flash.success}</span>
-            <button onClick={() => setShowSuccess(false)} className="rounded p-1"><X className="h-4 w-4" /></button>
+            <button onClick={() => setDismissedSuccess(flash?.success ?? null)} className="rounded p-1"><X className="h-4 w-4" /></button>
           </div>
         )}
         {flash?.error && showError && (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
             <span className="break-all">{flash.error}</span>
-            <button onClick={() => setShowError(false)} className="rounded p-1"><X className="h-4 w-4" /></button>
+            <button onClick={() => setDismissedError(flash?.error ?? null)} className="rounded p-1"><X className="h-4 w-4" /></button>
           </div>
         )}
 
@@ -515,24 +513,24 @@ export default function BrandShow() {
 
         {/* Brand documents section - fixed layout with buttons always top-right */}
         <div className="grid gap-6">
-          <Card className="border-0 bg-white/90 shadow-sm">
+          <Card className="border-0 bg-white dark:bg-slate-900/90 shadow-sm">
             <CardHeader><CardTitle className="text-base">Brand documents</CardTitle><CardDescription>Manuals and guidance shared across every model.</CardDescription></CardHeader>
             <CardContent>
               {documents === undefined ? (
                 <div className="space-y-3">
-                  <div className="h-12 animate-pulse rounded-md bg-slate-200" />
-                  <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+                  <div className="h-12 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-12 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
                 </div>
               ) : (
                 <div className="space-y-3">
                   {documents?.length ? documents.map((doc) => (
-                    <div key={doc.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                    <div key={doc.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                       {/* Grid: text column + button column */}
                       <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[1fr_auto]">
                         {/* Left column: all text info */}
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-slate-900">{doc.original_name}</p>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{doc.original_name}</p>
                             {doc.is_processing ? (
                               <Badge className="bg-amber-500">Processing...</Badge>
                             ) : doc.ai_fed ? (
@@ -543,7 +541,7 @@ export default function BrandShow() {
                               <Badge variant="secondary">Not fed</Badge>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {doc.mime_type} - {formatFileSize(doc.file_size)}
                           </p>
                           {/* AI feed error with expand/collapse */}
@@ -580,7 +578,7 @@ export default function BrandShow() {
                         </div>
                       </div>
                     </div>
-                  )) : <p className="text-sm text-slate-500">No brand documents uploaded yet.</p>}
+                  )) : <p className="text-sm text-slate-500 dark:text-slate-400">No brand documents uploaded yet.</p>}
                 </div>
               )}
             </CardContent>
@@ -589,30 +587,30 @@ export default function BrandShow() {
 
         {/* Brand error codes section */}
         <div className="grid gap-6">
-          <Card className="border-0 bg-white/90 shadow-sm">
+          <Card className="border-0 bg-white dark:bg-slate-900/90 shadow-sm">
             <CardHeader><CardTitle className="text-base">Brand error codes</CardTitle><CardDescription>Common errors that apply to all models.</CardDescription></CardHeader>
             <CardContent>
               {errorCodes === undefined ? (
                 <div className="space-y-3">
-                  <div className="h-16 animate-pulse rounded-md bg-slate-200" />
-                  <div className="h-16 animate-pulse rounded-md bg-slate-200" />
+                  <div className="h-16 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-16 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
                 </div>
               ) : (
                 <div className="space-y-3">
                   {errorCodes?.data.length ? errorCodes.data.map((ec) => (
-                    <div key={ec.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div key={ec.id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
                       <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-2"><Badge variant="outline">{ec.code}</Badge><p className="text-sm font-semibold text-slate-900">{ec.description}</p></div>
-                        <Button variant="ghost" size="sm" onClick={() => openDeleteErrorCodeModal(ec)}><Trash2 className="h-4 w-4 text-slate-500" /></Button>
+                        <div className="space-y-2"><Badge variant="outline">{ec.code}</Badge><p className="text-sm font-semibold text-slate-900 dark:text-white">{ec.description}</p></div>
+                        <Button variant="ghost" size="sm" onClick={() => openDeleteErrorCodeModal(ec)}><Trash2 className="h-4 w-4 text-slate-500 dark:text-slate-400" /></Button>
                       </div>
-                      <p className="mt-3 text-sm text-slate-600">{ec.resolution_steps}</p>
+                      <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{ec.resolution_steps}</p>
                     </div>
-                  )) : <p className="text-sm text-slate-500">No brand error codes yet.</p>}
+                  )) : <p className="text-sm text-slate-500 dark:text-slate-400">No brand error codes yet.</p>}
                 </div>
               )}
               {errorCodes?.links && errorCodes.links.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
-                  {errorCodes.links.map((link, idx) => link.url ? <Link key={idx} href={link.url} className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span key={idx} className="rounded-full border border-slate-200 px-3 py-1 text-slate-400" dangerouslySetInnerHTML={{ __html: link.label }} />)}
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
+                  {errorCodes.links.map((link, idx) => link.url ? <Link key={idx} href={link.url} className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 dark:border-slate-700 bg-slate-900 dark:bg-slate-700 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300'}`} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span key={idx} className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-slate-400 dark:text-slate-500" dangerouslySetInnerHTML={{ __html: link.label }} />)}
                 </div>
               )}
             </CardContent>
@@ -620,36 +618,36 @@ export default function BrandShow() {
         </div>
 
         {/* Models table */}
-        <Card className="border-0 bg-white/90 shadow-sm">
+        <Card className="border-0 bg-white dark:bg-slate-900/90 shadow-sm">
           <CardHeader><CardTitle className="text-base">Models</CardTitle><CardDescription>Model-level manuals and error codes inside each profile.</CardDescription></CardHeader>
           <CardContent>
             {models === undefined ? (
               <div className="space-y-2">
-                <div className="h-12 animate-pulse rounded-md bg-slate-200" />
-                <div className="h-12 animate-pulse rounded-md bg-slate-200" />
+                <div className="h-12 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
+                <div className="h-12 animate-pulse rounded-md bg-slate-200 dark:bg-slate-800" />
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <table className="min-w-full text-sm">
-                  <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
+                  <thead className="border-b bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                     <tr><th className="px-4 py-3 text-left">Model</th><th className="px-4 py-3 text-left">Model #</th><th className="px-4 py-3 text-left">Docs</th><th className="px-4 py-3 text-left">Errors</th><th className="px-4 py-3 text-left">Action</th></tr>
                   </thead>
                   <tbody>
                     {models?.data.map((model) => (
                       <tr key={model.id} className="border-b last:border-b-0">
-                        <td className="px-4 py-3"><p className="text-sm font-semibold text-slate-900">{model.name}</p><p className="text-xs text-slate-500">{model.capacity_btu ? `${model.capacity_btu} BTU` : 'Capacity not set'}</p></td>
-                        <td className="px-4 py-3 text-slate-600">{model.model_number ?? '-'}</td>
-                        <td className="px-4 py-3 text-slate-600">{model.documents_count ?? 0}</td>
-                        <td className="px-4 py-3 text-slate-600">{model.error_codes_count ?? 0}</td>
-                        <td className="px-4 py-3"><Button asChild variant="outline" size="sm"><Link href={`/hvac-models/${model.id}`} prefetch className="gap-2"><Eye className="h-4 w-4" />View</Link></Button></td>
+                        <td className="px-4 py-3"><p className="text-sm font-semibold text-slate-900 dark:text-white">{model.name}</p><p className="text-xs text-slate-500 dark:text-slate-400">{model.capacity_btu ? `${model.capacity_btu} BTU` : 'Capacity not set'}</p></td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{model.model_number ?? '-'}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{model.documents_count ?? 0}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{model.error_codes_count ?? 0}</td>
+                        <td className="px-4 py-3"><Button asChild variant="outline" size="sm"><Link href={`/hvac-models/${model.slug}`} prefetch className="gap-2"><Eye className="h-4 w-4" />View</Link></Button></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {models?.data.length === 0 && <p className="p-4 text-sm text-slate-500">No models found for this brand.</p>}
+                {models?.data.length === 0 && <p className="p-4 text-sm text-slate-500 dark:text-slate-400">No models found for this brand.</p>}
                 {models?.links && models.links.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
-                    {models.links.map((link, idx) => link.url ? <Link key={idx} href={link.url} className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span key={idx} className="rounded-full border border-slate-200 px-3 py-1 text-slate-400" dangerouslySetInnerHTML={{ __html: link.label }} />)}
+                  <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
+                    {models.links.map((link, idx) => link.url ? <Link key={idx} href={link.url} className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 dark:border-slate-700 bg-slate-900 dark:bg-slate-700 text-white' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300'}`} dangerouslySetInnerHTML={{ __html: link.label }} /> : <span key={idx} className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-slate-400 dark:text-slate-500" dangerouslySetInnerHTML={{ __html: link.label }} />)}
                   </div>
                 )}
               </div>

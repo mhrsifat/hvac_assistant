@@ -50,6 +50,7 @@ class TransactionController extends Controller
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
+            'subscription_id' => ['nullable', 'integer', 'exists:subscriptions,id'],
             'amount' => ['required', 'numeric', 'min:0'],
             'currency' => ['required', 'string', 'max:3'],
             'payment_method' => ['required', 'string', 'max:50'],

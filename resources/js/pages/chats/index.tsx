@@ -1,5 +1,5 @@
-import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Eye, MessageSquare, Plus, Search, Trash2, X } from 'lucide-react';
+import { Deferred, Head, router, useForm, usePage } from '@inertiajs/react';
+import { Eye, MessageSquare, Search, Trash2, X } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +45,7 @@ function LocalSearchableSelect({
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
+
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
@@ -53,11 +54,13 @@ function LocalSearchableSelect({
     return (
         <div className="relative min-w-[200px]" ref={wrapperRef}>
             {selectedItem ? (
-                <div className="flex h-10 items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-sm overflow-hidden">
+                <div className="flex h-10 items-center justify-between rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-sm overflow-hidden">
                     <div className="flex-1 min-w-0 overflow-hidden">
                         {renderItem(selectedItem)}
                     </div>
-                    <button type="button" onClick={() => { onChange(''); setQuery(''); }} className="ml-2 shrink-0 text-slate-400 hover:text-slate-600">
+                    <button type="button" onClick={() => {
+ onChange(''); setQuery(''); 
+}} className="ml-2 shrink-0 text-slate-400 hover:text-slate-600 dark:text-slate-300">
                         <X className="h-4 w-4" />
                     </button>
                 </div>
@@ -66,20 +69,22 @@ function LocalSearchableSelect({
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <Input
                         value={query}
-                        onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
+                        onChange={(e) => {
+ setQuery(e.target.value); setIsOpen(true); 
+}}
                         onFocus={() => setIsOpen(true)}
                         placeholder={placeholder}
-                        className="pl-9 h-10 border-slate-200"
+                        className="pl-9 h-10 border-slate-200 dark:border-slate-800"
                         autoComplete="off"
                     />
                     {isOpen && (
-                        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white shadow-lg">
+                        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
                             {filteredOptions.length > 0 ? (
                                 filteredOptions.map(option => (
                                     <button
                                         key={option.id}
                                         type="button"
-                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
+                                        className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50"
                                         onClick={() => {
                                             onChange(String(option.id));
                                             setIsOpen(false);
@@ -90,7 +95,7 @@ function LocalSearchableSelect({
                                     </button>
                                 ))
                             ) : (
-                                <div className="px-3 py-2 text-sm text-slate-500">No results found</div>
+                                <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">No results found</div>
                             )}
                         </div>
                     )}
@@ -123,6 +128,7 @@ type BrandOption = {
 type Chat = {
     id: number;
     title: string;
+    slug: string;
     status: 'active' | 'closed' | 'limitHit';
     messages_count: number;
     user?: { 
@@ -173,9 +179,9 @@ type ChatsPageProps = {
 const renderUserOption = (u: UserOption) => (
     <div className="flex items-center gap-2">
         {u.avatar ? (
-            <img src={u.avatar} alt="" className="h-6 w-6 rounded-full object-cover border border-slate-200" />
+            <img src={u.avatar} alt="" className="h-6 w-6 rounded-full object-cover border border-slate-200 dark:border-slate-800" />
         ) : (
-            <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+            <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 dark:text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0">
                 {u.first_name?.[0] || u.email[0].toUpperCase()}
             </div>
         )}
@@ -183,7 +189,7 @@ const renderUserOption = (u: UserOption) => (
             className="flex-1 overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-            {u.first_name} {u.last_name} <span className="text-slate-500 text-xs">({u.email})</span>
+            {u.first_name} {u.last_name} <span className="text-slate-500 dark:text-slate-400 text-xs">({u.email})</span>
         </div>
     </div>
 );
@@ -191,9 +197,9 @@ const renderUserOption = (u: UserOption) => (
 const renderModelOption = (m: HvacModelOption) => (
     <div className="flex items-center gap-2">
         {m.image_path ? (
-            <img src={m.image_path} alt="" className="h-6 w-6 rounded-md object-cover border border-slate-200 bg-white" />
+            <img src={m.image_path} alt="" className="h-6 w-6 rounded-md object-cover border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
         ) : (
-            <div className="h-6 w-6 rounded-md bg-slate-100 flex items-center justify-center border border-slate-200 shrink-0">
+            <div className="h-6 w-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-800 shrink-0">
                 <div className="h-3 w-3 bg-slate-300 rounded-sm"></div>
             </div>
         )}
@@ -201,21 +207,23 @@ const renderModelOption = (m: HvacModelOption) => (
             className="flex-1 overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-            {m.name}{m.brand ? <span className="text-slate-500 text-xs ml-1">({m.brand.name})</span> : ''}
+            {m.name}{m.brand ? <span className="text-slate-500 dark:text-slate-400 text-xs ml-1">({m.brand.name})</span> : ''}
         </div>
     </div>
 );
 
 const statusStyles: Record<string, string> = {
-    active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    closed: 'bg-slate-100 text-slate-600 border-slate-200',
+    active: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+    closed: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800',
     limitHit: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
 export default function ChatsIndex() {
     const { chats, users, hvacModels, brands, filters, flash } = usePage<ChatsPageProps>().props;
-    const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
-    const [showError, setShowError] = useState(Boolean(flash?.error));
+    const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
+    const [dismissedError, setDismissedError] = useState<string | null>(null);
+    const showSuccess = Boolean(flash?.success) && flash?.success !== dismissedSuccess;
+    const showError = Boolean(flash?.error) && flash?.error !== dismissedError;
     const [search, setSearch] = useState(filters.search ?? '');
     const [statusFilter, setStatusFilter] = useState(filters.status ?? '');
     const [userFilter, setUserFilter] = useState(filters.user_id ?? '');
@@ -237,13 +245,6 @@ export default function ChatsIndex() {
         status: 'active',
     });
 
-    useEffect(() => {
-        setShowSuccess(Boolean(flash?.success));
-    }, [flash?.success]);
-
-    useEffect(() => {
-        setShowError(Boolean(flash?.error));
-    }, [flash?.error]);
 
     // 100% Seamless Silent Polling Every 5 Seconds
     useEffect(() => {
@@ -295,7 +296,7 @@ export default function ChatsIndex() {
             return;
         }
 
-        router.delete(`/chats/${deleteTarget.id}`, {
+        router.delete(`/chats/${deleteTarget.slug}`, {
             preserveScroll: true,
             onSuccess: () => {
                 setIsDeleteOpen(false);
@@ -310,10 +311,10 @@ export default function ChatsIndex() {
 
     // টেবিল রেন্ডার করার ফাংশন যাতে কোড ডুপ্লিকেট না হয়
     const renderChatsTable = () => (
-        <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+        <div className="overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 shadow-sm">
             <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                    <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
+                    <thead className="border-b bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                         <tr>
                             <th className="px-4 py-4 text-left">Chat</th>
                             <th className="px-4 py-4 text-left">User</th>
@@ -327,14 +328,14 @@ export default function ChatsIndex() {
                         {chats?.data.map((chat) => (
                             <tr
                                 key={chat.id}
-                                className="border-b transition-colors last:border-b-0 hover:bg-slate-50/50"
+                                className="border-b transition-colors last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50"
                             >
                                 <td className="px-4 py-4">
                                     <div className="flex items-center gap-3">
                                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
                                             <MessageSquare className="h-4 w-4" />
                                         </div>
-                                        <p className="max-w-[200px] truncate font-semibold text-slate-900">
+                                        <p className="max-w-[200px] truncate font-semibold text-slate-900 dark:text-white">
                                             {chat.title}
                                         </p>
                                     </div>
@@ -343,16 +344,16 @@ export default function ChatsIndex() {
                                     {chat.user ? (
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <p className="font-medium text-slate-800">
+                                                <p className="font-medium text-slate-800 dark:text-slate-100">
                                                     {chat.user.first_name} {chat.user.last_name}
                                                 </p>
                                                 {chat.user.subscriptions && chat.user.subscriptions.length > 0 && chat.user.subscriptions[0].plan && (
-                                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20">
                                                         {chat.user.subscriptions[0].plan.name}
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-slate-500">{chat.user.email}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{chat.user.email}</p>
                                         </div>
                                     ) : (
                                         <span className="text-slate-400">—</span>
@@ -361,11 +362,11 @@ export default function ChatsIndex() {
                                 <td className="px-4 py-4">
                                     {chat.hvac_model ? (
                                         <div>
-                                            <p className="text-sm text-slate-700">
+                                            <p className="text-sm text-slate-700 dark:text-slate-300">
                                                 {chat.hvac_model.name}
                                             </p>
                                             {chat.hvac_model.brand && (
-                                                <p className="text-xs text-slate-500">
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">
                                                     {chat.hvac_model.brand.name}
                                                 </p>
                                             )}
@@ -374,7 +375,7 @@ export default function ChatsIndex() {
                                         <span className="text-slate-400">—</span>
                                     )}
                                 </td>
-                                <td className="px-4 py-4 text-slate-600">{chat.messages_count}</td>
+                                <td className="px-4 py-4 text-slate-600 dark:text-slate-300">{chat.messages_count}</td>
                                 <td className="px-4 py-4">
                                     <Badge
                                         variant="outline"
@@ -386,7 +387,7 @@ export default function ChatsIndex() {
                                 <td className="px-4 py-4">
                                     <div className="flex flex-wrap gap-2">
                                         <Button asChild variant="outline" size="sm">
-                                            <a href={`/chats/${chat.id}`} className="gap-2">
+                                            <a href={`/chats/${chat.slug}`} className="gap-2">
                                                 <Eye className="h-3.5 w-3.5" />
                                                 View
                                             </a>
@@ -395,7 +396,7 @@ export default function ChatsIndex() {
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50"
+                                            className="gap-1.5 border-red-200 dark:border-red-500/20 text-red-600 hover:bg-red-50 dark:bg-red-500/10"
                                             onClick={() => openDeleteModal(chat)}
                                         >
                                             <Trash2 className="h-3.5 w-3.5" />
@@ -409,11 +410,11 @@ export default function ChatsIndex() {
                 </table>
 
                 {chats?.data.length === 0 ? (
-                    <p className="p-6 text-sm text-slate-500">No chats found.</p>
+                    <p className="p-6 text-sm text-slate-500 dark:text-slate-400">No chats found.</p>
                 ) : null}
 
                 {chats?.links && chats.links.length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
+                    <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
                         {chats.links.map((link, index) =>
                             link.url ? (
                                 <a
@@ -422,14 +423,14 @@ export default function ChatsIndex() {
                                     className={`rounded-full border px-3 py-1 transition ${
                                         link.active
                                             ? 'border-slate-900 bg-slate-900 text-white'
-                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'
+                                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-400'
                                     }`}
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                 />
                             ) : (
                                 <span
                                     key={`${link.label}-${index}`}
-                                    className="rounded-full border border-slate-200 px-3 py-1 text-slate-400"
+                                    className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-slate-400"
                                     dangerouslySetInnerHTML={{ __html: link.label }}
                                 />
                             ),
@@ -446,24 +447,24 @@ export default function ChatsIndex() {
 
             <div className="space-y-8">
                 {/* Header */}
-                <section className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm">
+                <section className="relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 p-6 shadow-sm">
                     <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-violet-200/60 blur-3xl" />
                     <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-blue-200/70 blur-3xl" />
                     <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Support</p>
-                            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Chats</h1>
-                            <p className="max-w-xl text-sm text-slate-600">
+                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Support</p>
+                            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Chats</h1>
+                            <p className="max-w-xl text-sm text-slate-600 dark:text-slate-300">
                                 View and manage all support chat sessions. Update their status or remove resolved
                                 conversations.
                             </p>
                         </div>
                         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                             <DialogTrigger asChild>
-                                <Button className="gap-2">
+                                {/* <Button className="gap-2">
                                     <Plus className="h-4 w-4" />
                                     Create chat
-                                </Button>
+                                </Button> */}
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-lg">
                                 <DialogHeader>
@@ -472,7 +473,7 @@ export default function ChatsIndex() {
                                 </DialogHeader>
                                 <form onSubmit={submitCreate} className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">User</label>
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">User</label>
                                         <LocalSearchableSelect
                                             options={users ?? []}
                                             value={createForm.data.user_id}
@@ -481,6 +482,7 @@ export default function ChatsIndex() {
                                             renderItem={renderUserOption}
                                             filterItem={(u, q) => {
                                                 const searchStr = `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase();
+
                                                 return searchStr.includes(q.toLowerCase());
                                             }}
                                         />
@@ -489,7 +491,7 @@ export default function ChatsIndex() {
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">HVAC Model</label>
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">HVAC Model</label>
                                         <LocalSearchableSelect
                                             options={hvacModels ?? []}
                                             value={createForm.data.hvac_model_id}
@@ -503,7 +505,7 @@ export default function ChatsIndex() {
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">Chat title</label>
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Chat title</label>
                                         <Input
                                             value={createForm.data.title}
                                             onChange={(e) => createForm.setData('title', e.target.value)}
@@ -515,16 +517,16 @@ export default function ChatsIndex() {
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">Initial status</label>
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Initial status</label>
                                         <select
-                                            className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                                            className={`h-10 w-full rounded-md border bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-2 text-sm focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 ${createForm.errors.status ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'}`}
                                             value={createForm.data.status}
                                             onChange={(e) => createForm.setData('status', e.target.value as 'active' | 'closed' | 'limitHit')}
                                             required
                                         >
-                                            <option value="active">Active</option>
-                                            <option value="closed">Closed</option>
-                                            <option value="limitHit">LimitHit</option>
+                                            <option value="active" className="bg-white dark:bg-slate-900">Active</option>
+                                            <option value="closed" className="bg-white dark:bg-slate-900">Closed</option>
+                                            <option value="limitHit" className="bg-white dark:bg-slate-900">LimitHit</option>
                                         </select>
                                     </div>
                                     <DialogFooter>
@@ -547,12 +549,12 @@ export default function ChatsIndex() {
 
                 {/* Flash messages */}
                 {flash?.success && showSuccess ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
                         <span>{flash.success}</span>
                         <button
                             type="button"
-                            onClick={() => setShowSuccess(false)}
-                            className="rounded p-1 text-emerald-700/80 transition hover:text-emerald-900"
+                            onClick={() => setDismissedSuccess(flash?.success ?? null)}
+                            className="rounded p-1 text-emerald-700 dark:text-emerald-400/80 transition hover:text-emerald-900"
                             aria-label="Dismiss"
                         >
                             <X className="h-4 w-4" />
@@ -561,12 +563,12 @@ export default function ChatsIndex() {
                 ) : null}
 
                 {flash?.error && showError ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                         <span>{flash.error}</span>
                         <button
                             type="button"
-                            onClick={() => setShowError(false)}
-                            className="rounded p-1 text-red-700/80 transition hover:text-red-900"
+                            onClick={() => setDismissedError(flash?.error ?? null)}
+                            className="rounded p-1 text-red-700 dark:text-red-400/80 transition hover:text-red-900"
                             aria-label="Dismiss"
                         >
                             <X className="h-4 w-4" />
@@ -575,7 +577,7 @@ export default function ChatsIndex() {
                 ) : null}
 
                 {/* Filters */}
-                <Card className="border-0 bg-white/90 shadow-sm overflow-visible">
+                <Card className="border-0 bg-white dark:bg-slate-900/90 shadow-sm overflow-visible">
                     <CardHeader className="space-y-1">
                         <CardTitle className="text-base">Filter chats</CardTitle>
                         <CardDescription>Search by title or username and filter by status.</CardDescription>
@@ -601,21 +603,22 @@ export default function ChatsIndex() {
                                         renderItem={renderUserOption}
                                         filterItem={(u, q) => {
                                             const searchStr = `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase();
+
                                             return searchStr.includes(q.toLowerCase());
                                         }}
                                     />
                                 </div>
                                 <select
-                                    className="h-10 min-w-[150px] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                                    className="h-10 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 text-sm"
                                     value={brandFilter}
                                     onChange={(e) => {
                                         setBrandFilter(e.target.value);
                                         setHvacModelFilter(''); // Reset model when brand changes
                                     }}
                                 >
-                                    <option value="">All Brands</option>
+                                    <option value="" className="bg-white dark:bg-slate-900">All Brands</option>
                                     {brands?.map(b => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                        <option key={b.id} value={b.id} className="bg-white dark:bg-slate-900">{b.name}</option>
                                     ))}
                                 </select>
                                 <div className="min-w-[200px]">
@@ -629,14 +632,14 @@ export default function ChatsIndex() {
                                     />
                                 </div>
                                 <select
-                                    className="h-10 min-w-[130px] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                                    className="h-10 min-w-[130px] rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-sm text-slate-700 dark:text-slate-300"
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
                                 >
-                                    <option value="">All statuses</option>
-                                    <option value="active">Active</option>
-                                    <option value="closed">Closed</option>
-                                    <option value="limitHit">LimitHit</option>
+                                    <option value="" className="bg-white dark:bg-slate-900">All statuses</option>
+                                    <option value="active" className="bg-white dark:bg-slate-900">Active</option>
+                                    <option value="closed" className="bg-white dark:bg-slate-900">Closed</option>
+                                    <option value="limitHit" className="bg-white dark:bg-slate-900">LimitHit</option>
                                 </select>
                                 <Button type="submit" variant="outline">
                                     Search
@@ -646,7 +649,7 @@ export default function ChatsIndex() {
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="gap-1 text-slate-500"
+                                        className="gap-1 text-slate-500 dark:text-slate-400"
                                         onClick={() => {
                                             setSearch('');
                                             setStatusFilter('');
@@ -671,9 +674,9 @@ export default function ChatsIndex() {
                         data="chats"
                         fallback={
                             <div className="space-y-2">
-                                <div className="h-16 animate-pulse rounded-md bg-gray-200" />
-                                <div className="h-16 animate-pulse rounded-md bg-gray-200" />
-                                <div className="h-16 animate-pulse rounded-md bg-gray-200" />
+                                <div className="h-16 animate-pulse rounded-md bg-gray-200 dark:bg-slate-800" />
+                                <div className="h-16 animate-pulse rounded-md bg-gray-200 dark:bg-slate-800" />
+                                <div className="h-16 animate-pulse rounded-md bg-gray-200 dark:bg-slate-800" />
                             </div>
                         }
                     >
@@ -689,6 +692,7 @@ export default function ChatsIndex() {
                 open={isDeleteOpen}
                 onOpenChange={(open) => {
                     setIsDeleteOpen(open);
+
                     if (!open) {
                         setDeleteTarget(null);
                     }

@@ -15,7 +15,7 @@ import { destroy as destroyPlan, store as storePlan, update as updatePlan } from
 import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { FormEvent} from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 // Added 'slug' to the Plan type
 type Plan = {
@@ -110,22 +110,16 @@ const formatPrice = (value: string | number | null | undefined, currency: string
 
 export default function PlansIndex() {
   const { plans, flash } = usePage<PlansPageProps>().props;
-  const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
-  const [showError, setShowError] = useState(Boolean(flash?.error));
+  const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
+  const showSuccess = Boolean(flash?.success) && flash?.success !== dismissedSuccess;
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
+  const showError = Boolean(flash?.error) && flash?.error !== dismissedError;
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Plan | null>(null);
 
   const planForm = useForm<PlanFormData>(defaultFormData);
-
-  useEffect(() => {
-    setShowSuccess(Boolean(flash?.success));
-  }, [flash?.success]);
-
-  useEffect(() => {
-    setShowError(Boolean(flash?.error));
-  }, [flash?.error]);
 
   const fillForm = (plan: Plan | null): void => {
     planForm.setData({
@@ -223,18 +217,18 @@ export default function PlansIndex() {
       <Head title="Plans" />
 
       <div className="space-y-8">
-        <section className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm">
-          <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-amber-200/60 blur-3xl" />
-          <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-sky-200/70 blur-3xl" />
+        <section className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-amber-200/60 dark:bg-amber-500/10 blur-3xl" />
+          <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-sky-200/70 dark:bg-sky-500/10 blur-3xl" />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
                 Monetization
               </p>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
                 Plans
               </h1>
-              <p className="max-w-2xl text-sm text-slate-600">
+              <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-400">
                 Create pricing tiers, update billing settings, and manage subscription metadata from one place.
               </p>
             </div>
@@ -257,7 +251,7 @@ export default function PlansIndex() {
                 <form onSubmit={submitPlan} className="space-y-6">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-sm font-medium text-slate-700">Plan name</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Plan name</label>
                       <Input
                         value={planForm.data.name}
                         onChange={(event) => planForm.setData('name', event.target.value)}
@@ -268,7 +262,7 @@ export default function PlansIndex() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Final price</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Final price</label>
                       <Input
                         type="number"
                         step="0.01"
@@ -282,7 +276,7 @@ export default function PlansIndex() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Currency</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Currency</label>
                       <Input
                         value={planForm.data.currency}
                         onChange={(event) => planForm.setData('currency', event.target.value.toUpperCase())}
@@ -294,11 +288,11 @@ export default function PlansIndex() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Billing interval</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Billing interval</label>
                       <select
                         value={planForm.data.billing_interval}
                         onChange={(event) => planForm.setData('billing_interval', event.target.value as Plan['billing_interval'])}
-                        className={`h-10 w-full rounded-md border px-3 text-sm ${planForm.errors.billing_interval ? 'border-red-500' : 'border-slate-200'}`}
+                        className={`h-10 w-full rounded-md border bg-white dark:bg-slate-900 px-3 text-sm text-slate-900 dark:text-white ${planForm.errors.billing_interval ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'}`}
                       >
                         {Object.entries(billingIntervalLabels).map(([value, label]) => (
                           <option key={value} value={value}>
@@ -310,7 +304,7 @@ export default function PlansIndex() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Trial days</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Trial days</label>
                       <Input
                         type="number"
                         min="0"
@@ -323,11 +317,11 @@ export default function PlansIndex() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Status</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Status</label>
                       <select
                         value={planForm.data.status}
                         onChange={(event) => planForm.setData('status', event.target.value as Plan['status'])}
-                        className={`h-10 w-full rounded-md border px-3 text-sm ${planForm.errors.status ? 'border-red-500' : 'border-slate-200'}`}
+                        className={`h-10 w-full rounded-md border bg-white dark:bg-slate-900 px-3 text-sm text-slate-900 dark:text-white ${planForm.errors.status ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'}`}
                       >
                         {Object.entries(statusLabels).map(([value, label]) => (
                           <option key={value} value={value}>
@@ -341,8 +335,8 @@ export default function PlansIndex() {
                     <div className="space-y-3 md:col-span-2">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <label className="text-sm font-medium text-slate-700">Features</label>
-                          <p className="text-xs text-slate-500">Add plan features.</p>
+                          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Features</label>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Add plan features.</p>
                         </div>
                         <Button type="button" variant="outline" size="sm" onClick={addFeature} className="gap-2">
                           <Plus className="h-4 w-4" />
@@ -374,7 +368,7 @@ export default function PlansIndex() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Apple product ID</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Apple product ID</label>
                       <Input
                         value={planForm.data.apple_product_id}
                         onChange={(event) => planForm.setData('apple_product_id', event.target.value)}
@@ -383,7 +377,7 @@ export default function PlansIndex() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-slate-700">Google product ID</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Google product ID</label>
                       <Input
                         value={planForm.data.google_product_id}
                         onChange={(event) => planForm.setData('google_product_id', event.target.value)}
@@ -391,7 +385,7 @@ export default function PlansIndex() {
                       />
                     </div>
 
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                       <input
                         type="checkbox"
                         checked={planForm.data.is_recommended}
@@ -417,11 +411,11 @@ export default function PlansIndex() {
         </section>
 
         {flash?.success && showSuccess ? (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
             <span>{flash.success}</span>
             <button
               type="button"
-              onClick={() => setShowSuccess(false)}
+              onClick={() => setDismissedSuccess(flash?.success ?? null)}
               className="rounded p-1 text-emerald-700/80 transition hover:text-emerald-900"
               aria-label="Dismiss success message"
             >
@@ -431,11 +425,11 @@ export default function PlansIndex() {
         ) : null}
 
         {flash?.error && showError ? (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
             <span>{flash.error}</span>
             <button
               type="button"
-              onClick={() => setShowError(false)}
+              onClick={() => setDismissedError(flash?.error ?? null)}
               className="rounded p-1 text-red-700/80 transition hover:text-red-900"
               aria-label="Dismiss error message"
             >
@@ -455,10 +449,10 @@ export default function PlansIndex() {
           }
         >
           {() => (
-            <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="border-b bg-slate-50 text-xs uppercase tracking-[0.2em] text-slate-500">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="px-4 py-4 text-left">Plan</th>
                       <th className="px-4 py-4 text-left">Pricing</th>
@@ -468,14 +462,14 @@ export default function PlansIndex() {
                       <th className="px-4 py-4 text-left">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {plans?.data.length ? (
                       plans.data.map((plan) => (
-                        <tr key={plan.id} className="border-b last:border-b-0 align-top">
+                        <tr key={plan.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800/25 transition-colors">
                           <td className="px-4 py-4">
                             <div className="space-y-2">
                               <div>
-                                <p className="font-semibold text-slate-900">{plan.name}</p>
+                                <p className="font-semibold text-slate-900 dark:text-white">{plan.name}</p>
                               </div>
 
                               <div className="flex flex-wrap gap-2">
@@ -489,7 +483,7 @@ export default function PlansIndex() {
 
                           <td className="px-4 py-4">
                             <div className="space-y-1">
-                              <p className="font-semibold text-slate-900">
+                              <p className="font-semibold text-slate-900 dark:text-white">
                                 {formatPrice(plan.final_price, plan.currency)}
                               </p>
                             </div>
@@ -498,14 +492,14 @@ export default function PlansIndex() {
                           <td className="px-4 py-4">
                             <div className="space-y-1">
                               <Badge variant="outline">{billingIntervalLabels[plan.billing_interval]}</Badge>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
                                 Trial: {plan.trial_days} day{plan.trial_days === 1 ? '' : 's'}
                               </p>
                             </div>
                           </td>
 
                           <td className="px-4 py-4">
-                            <div className="space-y-1 text-slate-600">
+                            <div className="space-y-1 text-slate-600 dark:text-slate-300">
                               <p>{plan.subscriptions_count} subscription{plan.subscriptions_count === 1 ? '' : 's'}</p>
                               <p>{plan.payments_count} payment{plan.payments_count === 1 ? '' : 's'}</p>
                             </div>
@@ -559,7 +553,7 @@ export default function PlansIndex() {
                       ))
                     ) : (
                       <tr>
-                        <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={6}>
+                        <td className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400" colSpan={6}>
                           No plans found.
                         </td>
                       </tr>
@@ -569,19 +563,19 @@ export default function PlansIndex() {
               </div>
 
               {plans?.links && plans.links.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-4 py-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm">
                   {plans.links.map((link, index) =>
                     link.url ? (
                       <Link
                         key={index}
                         href={link.url}
-                        className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'}`}
+                        className={`rounded-full border px-3 py-1 transition ${link.active ? 'border-slate-900 dark:border-slate-700 bg-slate-900 dark:bg-slate-700 text-white' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                         dangerouslySetInnerHTML={{ __html: link.label }}
                       />
                     ) : (
                       <span
                         key={index}
-                        className="rounded-full border border-slate-200 px-3 py-1 text-slate-400"
+                        className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-slate-400 dark:text-slate-500"
                         dangerouslySetInnerHTML={{ __html: link.label }}
                       />
                     ),
@@ -609,7 +603,7 @@ export default function PlansIndex() {
                 This permanently removes the selected pricing plan.
               </DialogDescription>
             </DialogHeader>
-            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-900/20 px-4 py-3 text-sm text-rose-900 dark:text-rose-400">
               {deleteTarget?.name ?? 'Selected plan'} will be deleted.
             </div>
             <DialogFooter>

@@ -19,6 +19,7 @@ type Sender = {
     first_name: string;
     last_name: string;
     email: string;
+    avatar?: string | null;
 };
 
 type ChatMessage = {
@@ -39,7 +40,7 @@ type ChatDetail = {
     id: number;
     slug: string;
     title: string;
-    status: 'active' | 'closed';
+    status: 'active' | 'closed' | 'limitHit';
     messages_count: number;
     user?: {
         id: number;
@@ -47,6 +48,7 @@ type ChatDetail = {
         last_name: string;
         email: string;
         username: string;
+        avatar?: string | null;
         subscriptions?: {
             id: number;
             plan?: {
@@ -58,6 +60,7 @@ type ChatDetail = {
     hvac_model?: {
         id: number;
         name: string;
+        slug: string;
         model_number: string | null;
         brand?: { id: number; name: string; logo_path: string | null } | null;
     } | null;
@@ -73,14 +76,15 @@ type ChatShowProps = {
 };
 
 const statusStyles: Record<string, string> = {
-    active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    closed: 'bg-slate-100 text-slate-600 border-slate-200',
+    active: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+    closed: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800',
+    limitHit: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
 };
 
 const roleStyles: Record<string, string> = {
     user: 'bg-blue-600 text-white',
-    assistant: 'bg-slate-100 text-slate-900',
-    system: 'bg-amber-100 text-amber-900 border border-amber-200',
+    assistant: 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white',
+    system: 'bg-amber-100 text-amber-900 border border-amber-200 dark:border-amber-500/20',
 };
 
 const formatDate = (dateString: string): string => {
@@ -94,19 +98,13 @@ const formatDate = (dateString: string): string => {
 
 export default function ChatShow() {
     const { chat, messages, flash } = usePage<ChatShowProps>().props;
-    const [localMessages, setLocalMessages] = useState<ChatMessage[]>(messages ?? []);
-    const [showSuccess, setShowSuccess] = useState(Boolean(flash?.success));
-    const [showError, setShowError] = useState(Boolean(flash?.error));
+    const [dismissedSuccess, setDismissedSuccess] = useState<string | null>(null);
+    const [dismissedError, setDismissedError] = useState<string | null>(null);
+    const showSuccess = Boolean(flash?.success) && flash?.success !== dismissedSuccess;
+    const showError = Boolean(flash?.error) && flash?.error !== dismissedError;
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     
     const [downloadTarget, setDownloadTarget] = useState<{ url: string; name: string } | null>(null);
-
-    // Sync localMessages when Inertia loads the messages prop
-    useEffect(() => {
-        if (messages) {
-            setLocalMessages(messages);
-        }
-    }, [messages]);
 
     // 100% Seamless Silent Polling Every 5 Seconds
     useEffect(() => {
@@ -115,23 +113,14 @@ export default function ChatShow() {
                 only: ['messages'],
                 preserveState: true,
                 preserveScroll: true,
-                showProgress: false, // Prevents the blue loading bar at the top
+                showProgress: false,
             });
         }, 5000);
 
         return () => clearInterval(interval);
     }, []);
-
-    useEffect(() => {
-        setShowSuccess(Boolean(flash?.success));
-    }, [flash?.success]);
-
-    useEffect(() => {
-        setShowError(Boolean(flash?.error));
-    }, [flash?.error]);
-
     const confirmDelete = (): void => {
-        router.delete(`/chats/${chat.id}`, {
+        router.delete(`/chats/${chat.slug}`, {
             onSuccess: () => setIsDeleteOpen(false),
         });
     };
@@ -149,24 +138,24 @@ export default function ChatShow() {
 
             <div className="space-y-8">
                 {/* Header */}
-                <section className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm">
+                <section className="relative overflow-hidden rounded-2xl border bg-white dark:bg-slate-900 p-6 shadow-sm">
                     <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-violet-100/80 blur-3xl" />
                     <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-blue-100/70 blur-3xl" />
                     <div className="relative space-y-4">
                         <Link
                             href="/chats"
-                            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
+                            className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-white"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Back to chats
                         </Link>
                         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
                                     Chat thread
                                 </p>
-                                <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{chat.title}</h1>
-                                <p className="text-sm text-slate-600">
+                                <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{chat.title}</h1>
+                                <p className="text-sm text-slate-600 dark:text-slate-300">
                                     {ownerName} · {chat.messages_count} message{chat.messages_count !== 1 ? 's' : ''}
                                 </p>
                             </div>
@@ -187,18 +176,18 @@ export default function ChatShow() {
 
                 {/* Flash messages */}
                 {flash?.success && showSuccess ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
                         <span>{flash.success}</span>
-                        <button onClick={() => setShowSuccess(false)} className="rounded p-1">
+                        <button onClick={() => setDismissedSuccess(flash?.success ?? null)} className="rounded p-1">
                             <X className="h-4 w-4" />
                         </button>
                     </div>
                 ) : null}
 
                 {flash?.error && showError ? (
-                    <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <div className="flex items-start justify-between gap-3 rounded-md border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                         <span>{flash.error}</span>
-                        <button onClick={() => setShowError(false)} className="rounded p-1">
+                        <button onClick={() => setDismissedError(flash?.error ?? null)} className="rounded p-1">
                             <X className="h-4 w-4" />
                         </button>
                     </div>
@@ -222,17 +211,28 @@ export default function ChatShow() {
                     <Card>
                         <CardHeader className="space-y-1">
                             <CardDescription>User</CardDescription>
-                            <div className="flex items-center gap-2">
-                                <CardTitle className="text-lg text-slate-900">{ownerName}</CardTitle>
-                                {chat.user?.subscriptions && chat.user.subscriptions.length > 0 && chat.user.subscriptions[0].plan && (
-                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-indigo-50 text-indigo-700 border-indigo-200">
-                                        {chat.user.subscriptions[0].plan.name}
-                                    </Badge>
+                            <div className="flex items-center gap-3">
+                                {chat.user?.avatar && (
+                                    <img
+                                        src={chat.user.avatar}
+                                        alt={ownerName}
+                                        className="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-800"
+                                    />
                                 )}
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <CardTitle className="text-lg text-slate-900 dark:text-white truncate">{ownerName}</CardTitle>
+                                        {chat.user?.subscriptions && chat.user.subscriptions.length > 0 && chat.user.subscriptions[0].plan && (
+                                            <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20">
+                                                {chat.user.subscriptions[0].plan.name}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {chat.user?.email && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{chat.user.email}</p>
+                                    )}
+                                </div>
                             </div>
-                            {chat.user?.email && (
-                                <p className="text-xs text-slate-500">{chat.user.email}</p>
-                            )}
                         </CardHeader>
                     </Card>
                     <Card>
@@ -240,12 +240,12 @@ export default function ChatShow() {
                             <CardDescription>HVAC model</CardDescription>
                             {chat.hvac_model ? (
                                 <>
-                                    <CardTitle className="text-lg text-slate-900">{chat.hvac_model.name}</CardTitle>
+                                    <CardTitle className="text-lg text-slate-900 dark:text-white">{chat.hvac_model.name}</CardTitle>
                                     {chat.hvac_model.brand && (
-                                        <p className="text-xs text-slate-500">{chat.hvac_model.brand.name}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{chat.hvac_model.brand.name}</p>
                                     )}
                                     <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs">
-                                        <Link href={`/hvac-models/${chat.hvac_model.id}`}>View model →</Link>
+                                        <Link href={`/hvac-models/${chat.hvac_model.slug}`}>View model →</Link>
                                     </Button>
                                 </>
                             ) : (
@@ -256,7 +256,7 @@ export default function ChatShow() {
                 </div>
 
                 {/* Messages thread */}
-                <Card className="border-0 bg-white/90 shadow-sm">
+                <Card className="border-0 bg-white dark:bg-slate-900/90 shadow-sm">
                     <CardHeader className="space-y-1">
                         <CardTitle className="text-base">Message thread</CardTitle>
                         <CardDescription>Full conversation in chronological order.</CardDescription>
@@ -264,14 +264,14 @@ export default function ChatShow() {
                     <CardContent>
                         {isInitialLoading ? (
                             <div className="space-y-4">
-                                <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
-                                <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
-                                <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
+                                <div className="h-20 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+                                <div className="h-20 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+                                <div className="h-20 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {localMessages?.length ? (
-                                    localMessages.map((msg) => (
+                                {messages?.length ? (
+                                    messages.map((msg) => (
                                         <div
                                             key={msg.id}
                                             className={`flex w-full ${msg.sender_role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -284,20 +284,36 @@ export default function ChatShow() {
                                                             <Bot className="h-5 w-5" />
                                                         </div>
                                                     ) : msg.sender_role === 'user' ? (
-                                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-slate-600 shadow-sm">
-                                                            <User className="h-5 w-5" />
-                                                        </div>
+                                                        msg.sender?.avatar ? (
+                                                            <img
+                                                                src={msg.sender.avatar}
+                                                                alt={msg.sender.first_name || 'User'}
+                                                                className="h-8 w-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-800"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-slate-600 dark:text-slate-300 shadow-sm">
+                                                                <User className="h-5 w-5" />
+                                                            </div>
+                                                        )
                                                     ) : (
-                                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm">
-                                                            <User className="h-5 w-5" />
-                                                        </div>
+                                                        msg.sender?.avatar ? (
+                                                            <img
+                                                                src={msg.sender.avatar}
+                                                                alt={msg.sender.first_name || 'System'}
+                                                                className="h-8 w-8 rounded-full object-cover shadow-sm border border-slate-200 dark:border-slate-800"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm">
+                                                                <User className="h-5 w-5" />
+                                                            </div>
+                                                        )
                                                     )}
                                                 </div>
 
                                                 {/* Message Bubble */}
                                                 <div className="flex flex-col gap-1">
                                                     <div className={`flex items-center gap-2 ${msg.sender_role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                                        <span className="text-[11px] font-medium text-slate-500">
+                                                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                                                             {msg.sender_role === 'assistant' ? 'AI Assistant' : msg.sender ? `${msg.sender.first_name} ${msg.sender.last_name}` : 'User'}
                                                         </span>
                                                         <time className="text-[10px] text-slate-400">
@@ -305,8 +321,8 @@ export default function ChatShow() {
                                                         </time>
                                                     </div>
 
-                                                    <div className={`rounded-2xl px-5 py-3.5 shadow-sm ${roleStyles[msg.sender_role] ?? 'bg-white border border-slate-200'} ${msg.sender_role === 'user' ? 'rounded-br-sm' : 'rounded-bl-sm'}`}>
-                                                        <p className={`whitespace-pre-wrap text-sm leading-relaxed ${msg.sender_role === 'user' ? 'text-white' : 'text-slate-800'}`}>
+                                                    <div className={`rounded-2xl px-5 py-3.5 shadow-sm ${roleStyles[msg.sender_role] ?? 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'} ${msg.sender_role === 'user' ? 'rounded-br-sm' : 'rounded-bl-sm'}`}>
+                                                        <p className={`whitespace-pre-wrap text-sm leading-relaxed ${msg.sender_role === 'user' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
                                                             {msg.content}
                                                         </p>
 
@@ -322,7 +338,7 @@ export default function ChatShow() {
                                                                                 key={idx} 
                                                                                 src={attachment.url} 
                                                                                 alt={attachment.name} 
-                                                                                className="max-h-64 max-w-full rounded-md object-contain border border-slate-200 bg-white" 
+                                                                                className="max-h-64 max-w-full rounded-md object-contain border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" 
                                                                             />
                                                                         );
                                                                     }
@@ -333,7 +349,7 @@ export default function ChatShow() {
                                                                                 key={idx} 
                                                                                 src={attachment.url} 
                                                                                 controls 
-                                                                                className="max-h-64 max-w-full rounded-md border border-slate-200 bg-black" 
+                                                                                className="max-h-64 max-w-full rounded-md border border-slate-200 dark:border-slate-800 bg-black" 
                                                                             />
                                                                         );
                                                                     }
@@ -346,7 +362,7 @@ export default function ChatShow() {
                                                                             className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-colors w-max max-w-full overflow-hidden ${
                                                                                 msg.sender_role === 'user' 
                                                                                     ? 'border-blue-500 bg-blue-700/50 text-blue-50 hover:bg-blue-700' 
-                                                                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                                                                                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50'
                                                                             }`}
                                                                         >
                                                                             <span className="truncate font-medium">{attachment.name}</span>
@@ -364,7 +380,7 @@ export default function ChatShow() {
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-sm text-slate-500">No messages in this chat yet.</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">No messages in this chat yet.</p>
                                 )}
                             </div>
                         )}
@@ -381,7 +397,7 @@ export default function ChatShow() {
                             Permanently remove this chat and all its messages.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+                    <div className="rounded-lg border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-900/20 px-4 py-3 text-sm text-rose-900 dark:text-rose-400">
                         You are about to delete <strong>"{chat.title}"</strong>. This action cannot be undone.
                     </div>
                     <DialogFooter>
@@ -403,7 +419,7 @@ export default function ChatShow() {
                         </DialogDescription>
                     </DialogHeader>
                     {downloadTarget && (
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 break-all">
+                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 break-all">
                             <strong>{downloadTarget.name}</strong>
                         </div>
                     )}

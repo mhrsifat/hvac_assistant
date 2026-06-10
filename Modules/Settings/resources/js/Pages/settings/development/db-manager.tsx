@@ -2,9 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import AdminLayout from '@/layouts/AdminLayout';
+import { ArrowDownTrayIcon, ArrowUpTrayIcon, ArchiveBoxIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import { ArrowDownTrayIcon, ArrowUpTrayIcon, ArchiveBoxIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 export default function DatabaseManager() {
   const { flash } = usePage<any>().props;
@@ -17,17 +17,25 @@ export default function DatabaseManager() {
 
   useEffect(() => {
     if (flash?.error) {
-      setErrorMessage(flash.error);
+      const initTimer = setTimeout(() => setErrorMessage(flash.error), 0);
       const timer = setTimeout(() => setErrorMessage(null), 5000);
-      return () => clearTimeout(timer);
+
+      return () => {
+        clearTimeout(initTimer);
+        clearTimeout(timer);
+      };
     }
   }, [flash?.error]);
 
   useEffect(() => {
     if (flash?.success) {
-      setSuccessMessage(flash.success);
+      const initTimer = setTimeout(() => setSuccessMessage(flash.success), 0);
       const timer = setTimeout(() => setSuccessMessage(null), 5000);
-      return () => clearTimeout(timer);
+
+      return () => {
+        clearTimeout(initTimer);
+        clearTimeout(timer);
+      };
     }
   }, [flash?.success]);
 
@@ -63,12 +71,15 @@ export default function DatabaseManager() {
   };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>, connection: string) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+    if (!e.target.files || e.target.files.length === 0) {
+return;
+}
     
     const file = e.target.files[0];
     
     if (!confirm(`Are you sure you want to restore the ${connection} database from this file? This will overwrite existing data.`)) {
         e.target.value = '';
+
         return;
     }
 

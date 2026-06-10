@@ -1,4 +1,5 @@
 import laravel from 'laravel-vite-plugin';
+/* global __dirname */
 import { defineConfig } from 'vite';
 // Uncomment the import for your frontend framework:
 // import vue from '@vitejs/plugin-vue';
