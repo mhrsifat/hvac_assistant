@@ -110,7 +110,7 @@ export default function SystemSettings() {
                     id="system_name"
                     name="system_name"
                     defaultValue={system.system_name ?? ''}
-                    placeholder="Smart Agro Dashboard"
+                    placeholder="Enter your system name"
                     className="h-11"
                     required
                   />
