@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import AdminLayout from '@/layouts/AdminLayout';
-import { destroy as destroyPlan, store as storePlan, update as updatePlan } from '@/routes/plans';
+import { destroy as destroyPlan, update as updatePlan } from '@/routes/plans';
 import { Deferred, Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { FormEvent} from 'react';
@@ -136,12 +136,12 @@ export default function PlansIndex() {
     });
   };
 
-  const openCreateDialog = (): void => {
-    setEditingPlan(null);
-    fillForm(null);
-    planForm.clearErrors();
-    setIsFormOpen(true);
-  };
+  // const openCreateDialog = (): void => {
+  //   setEditingPlan(null);
+  //   fillForm(null);
+  //   planForm.clearErrors();
+  //   setIsFormOpen(true);
+  // };
 
   const openEditDialog = (plan: Plan): void => {
     setEditingPlan(plan);
@@ -174,7 +174,7 @@ export default function PlansIndex() {
       return;
     }
 
-    planForm.post(storePlan.url(), visitOptions);
+    // planForm.post(storePlan.url(), visitOptions);
   };
 
   const openDeleteDialog = (plan: Plan): void => {
@@ -235,10 +235,10 @@ export default function PlansIndex() {
 
             <Dialog open={isFormOpen} onOpenChange={(open) => (open ? setIsFormOpen(true) : closeForm())}>
               <DialogTrigger asChild>
-                <Button className="gap-2" onClick={openCreateDialog}>
+                {/* <Button className="gap-2" onClick={openCreateDialog}>
                   <Plus className="h-4 w-4" />
                   Create plan
-                </Button>
+                </Button> */}
               </DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                 <DialogHeader>

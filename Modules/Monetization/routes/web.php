@@ -20,7 +20,7 @@ Route::middleware(['auth', 'verified', 'role:admin|super-admin'])
     ->name('plans.')
     ->group(function (): void {
         Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
+        // Route::post('/', 'store')->name('store');
         Route::get('{plan}', 'show')->name('show');
         Route::patch('{plan}', 'update')->name('update');
         Route::delete('{plan}', 'destroy')->name('destroy');
