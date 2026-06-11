@@ -39,7 +39,9 @@ class ChatService
 
     public function listChats($user, $request)
     {
-        $query = Chat::with('latestMessage')->where('user_id', $user->id);
+        $query = Chat::with('latestMessage')
+            ->where('user_id', $user->id)
+            ->whereHas('messages');
         $perPage = $this->resolvePerPage($request, 15);
 
         if ($request->has('hvac_model_slug')) {
