@@ -232,6 +232,7 @@ export default function ChatsIndex() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<Chat | null>(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const visibleChats = (chats?.data ?? []).filter((chat) => chat.messages_count > 0);
 
     const createForm = useForm<{
         user_id: string;
@@ -325,7 +326,7 @@ export default function ChatsIndex() {
                         </tr>
                     </thead>
                     <tbody>
-                        {chats?.data.map((chat) => (
+                        {visibleChats.map((chat) => (
                             <tr
                                 key={chat.id}
                                 className="border-b transition-colors last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/25 dark:bg-slate-800/50"
@@ -409,7 +410,7 @@ export default function ChatsIndex() {
                     </tbody>
                 </table>
 
-                {chats?.data.length === 0 ? (
+                {visibleChats.length === 0 ? (
                     <p className="p-6 text-sm text-slate-500 dark:text-slate-400">No chats found.</p>
                 ) : null}
 
