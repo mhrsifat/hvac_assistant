@@ -4,17 +4,17 @@ namespace App\Services\Web;
 
 use App\Helpers\Helper;
 use App\Models\Brand;
+use App\Models\ErrorCode;
 use App\Models\HvacModel;
 use App\Models\SupportDocument;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Ai\Ai;
 use PhpOffice\PhpSpreadsheet\IOFactory as SpreadsheetIOFactory;
 use PhpOffice\PhpWord\IOFactory as WordIOFactory;
 use RuntimeException;
-use Spatie\PdfToText\Pdf;
+use Smalot\PdfParser\Parser as PdfParser;
 
 class SupportDocumentService
 {
@@ -79,7 +79,7 @@ class SupportDocumentService
 
         $model->loadMissing('brand');
         $prefix = 'Brand: '.$model->brand->name.'. Model: '.$model->name.' ('.$model->model_number.'). Document: '.$document->original_name.'. ';
-        
+
         $chunks = array_map(
             static fn (string $chunk): string => $prefix.$chunk,
             $this->chunkText($cleanText, 1000, 200),
@@ -88,17 +88,17 @@ class SupportDocumentService
         $this->storeEmbeddings($chunks);
     }
 
-    public function feedErrorCodeToAi(\App\Models\ErrorCode $errorCode): void
+    public function feedErrorCodeToAi(ErrorCode $errorCode): void
     {
         $errorCode->loadMissing(['brand', 'hvacModel']);
-        
-        $prefix = 'Brand: ' . $errorCode->brand->name . '. ';
+
+        $prefix = 'Brand: '.$errorCode->brand->name.'. ';
         if ($errorCode->hvacModel) {
-            $prefix .= 'Model: ' . $errorCode->hvacModel->name . ' (' . $errorCode->hvacModel->model_number . '). ';
+            $prefix .= 'Model: '.$errorCode->hvacModel->name.' ('.$errorCode->hvacModel->model_number.'). ';
         }
-        
+
         $content = "Error Code: {$errorCode->code}. Description: {$errorCode->description}. Resolution Steps: {$errorCode->resolution_steps}.";
-        
+
         $chunks = array_map(
             static fn (string $chunk): string => $prefix.$chunk,
             $this->chunkText($content, 1000, 200),
@@ -142,12 +142,20 @@ class SupportDocumentService
         $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
 
         return match ($extension) {
-            'pdf' => Pdf::getText($path),
+            'pdf' => $this->extractPdfText($path),
             'docx' => $this->extractDocxText($path),
             'xlsx', 'csv' => $this->extractSpreadsheetText($path),
             'txt' => (string) file_get_contents($path),
             default => throw new RuntimeException('Unsupported document type for AI feed.'),
         };
+    }
+
+    private function extractPdfText(string $path): string
+    {
+        $parser = new PdfParser;
+        $pdf = $parser->parseFile($path);
+
+        return $pdf->getText();
     }
 
     private function extractDocxText(string $path): string
@@ -203,9 +211,20 @@ class SupportDocumentService
 
     private function sanitizeText(string $text): string
     {
-        // Force valid UTF-8 to prevent json_encode failures in Guzzle
-        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
-        
+        // Strip invalid UTF-8 byte sequences to prevent json_encode failures in Guzzle.
+        // mb_scrub() (PHP 8.4+) replaces invalid sequences with the Unicode replacement char (U+FFFD).
+        // We then strip those replacement chars and any remaining non-UTF-8 bytes via iconv as a fallback.
+        if (function_exists('mb_scrub')) {
+            $text = mb_scrub($text, 'UTF-8');
+        } else {
+            // Fallback for older PHP: iconv strips bytes that can't be converted
+            $text = (string) iconv('UTF-8', 'UTF-8//IGNORE', $text);
+        }
+
+        // Remove the Unicode replacement character (U+FFFD) left by mb_scrub
+        $text = str_replace("\u{FFFD}", '', $text);
+
+        // Collapse whitespace
         $cleaned = preg_replace('/\s+/', ' ', $text) ?? '';
 
         return trim($cleaned);
@@ -221,11 +240,11 @@ class SupportDocumentService
         }
 
         $chunks = [];
-        $length = strlen($text);
+        $length = mb_strlen($text, 'UTF-8');
         $offset = 0;
 
         while ($offset < $length) {
-            $chunk = substr($text, $offset, $chunkSize);
+            $chunk = mb_substr($text, $offset, $chunkSize, 'UTF-8');
 
             if (trim($chunk) !== '') {
                 $chunks[] = $chunk;
@@ -246,19 +265,21 @@ class SupportDocumentService
 
         $connection->transaction(function () use ($chunks, $connection): void {
             foreach ($chunks as $chunk) {
-                // Using Laravel 13 AI SDK instead of raw HTTP calls
-                $embeddingsResponse = Ai::embeddings([$chunk]);
+                // Final UTF-8 guard: ensure no bad bytes survive into the JSON payload
+                $safeChunk = $this->sanitizeText($chunk);
+
+                $embeddingsResponse = Ai::embeddings([$safeChunk]);
                 $embedding = $embeddingsResponse->first();
 
                 if (! is_array($embedding) || empty($embedding)) {
                     throw new RuntimeException('AI SDK embeddings response was empty.');
                 }
 
-                $vectorString = json_encode($embedding);
+                $vectorString = json_encode($embedding, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
                 $connection->insert(
                     'INSERT INTO manual_vectors (content, embedding) VALUES (?, ?::vector)',
-                    [$chunk, $vectorString],
+                    [$safeChunk, $vectorString],
                 );
 
                 usleep(200000); // 200ms delay to prevent rate-limiting

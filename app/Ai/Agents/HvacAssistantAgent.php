@@ -4,6 +4,7 @@ namespace App\Ai\Agents;
 
 use App\Models\Chat;
 use App\Models\User;
+use Laravel\Ai\Attributes\MaxSteps;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasTools;
@@ -13,15 +14,54 @@ use Laravel\Ai\Tools\SimilaritySearch;
 use Modules\Vector\Models\ManualVector;
 use Stringable;
 
+#[MaxSteps(5)]
 class HvacAssistantAgent implements Agent, Conversational, HasTools
 {
     use Promptable;
 
-    public function __construct(public User $user, public Chat $chat) {}
+    public function __construct(public User $user, public Chat $chat)
+    {
+        // Eagerly load brand/model context so instructions() can use it
+        $this->chat->loadMissing('hvacModel.brand');
+    }
 
     public function instructions(): Stringable|string
     {
-        return 'You are an expert HVAC technician assistant. You help technicians troubleshoot and repair HVAC systems based on error codes and manuals. Be concise and precise. Use the SimilaritySearch tool to find relevant manual content if you are unsure about specific error codes or procedures.';
+        $hvacModel = $this->chat->hvacModel;
+
+        $contextBlock = '';
+
+        if ($hvacModel) {
+            $brandName = $hvacModel->brand?->name ?? 'Unknown Brand';
+            $modelName = $hvacModel->name;
+            $modelNumber = $hvacModel->model_number ? " (Model #: {$hvacModel->model_number})" : '';
+            $specs = [];
+
+            if ($hvacModel->capacity_btu) {
+                $specs[] = "Capacity: {$hvacModel->capacity_btu} BTU";
+            }
+            if ($hvacModel->efficiency_rating) {
+                $specs[] = "Efficiency: {$hvacModel->efficiency_rating}";
+            }
+            if ($hvacModel->refrigerant_type) {
+                $specs[] = "Refrigerant: {$hvacModel->refrigerant_type}";
+            }
+            if ($hvacModel->power_spec) {
+                $specs[] = "Power: {$hvacModel->power_spec}";
+            }
+
+            $specsText = ! empty($specs) ? ' Specifications: '.implode(', ', $specs).'.' : '';
+
+            $contextBlock = "\n\nCURRENT SESSION CONTEXT:\n"
+                ."- Brand: {$brandName}\n"
+                ."- Model: {$modelName}{$modelNumber}\n"
+                .($specsText ? "- {$specsText}\n" : '')
+                ."\nYou are already aware of the brand and model above. Do NOT ask the user for their brand or model — you already know it. Focus directly on diagnosing and resolving their issue.";
+        }
+
+        return 'You are an expert HVAC technician assistant. You help technicians troubleshoot and repair HVAC systems based on error codes and manuals. Be concise and precise. '
+            .'CRITICAL: You MUST ALWAYS use the SimilaritySearch tool to look up error codes, manuals, or procedures BEFORE answering. NEVER rely on your pre-trained knowledge for error codes, as they vary wildly between brands and models.'
+            .$contextBlock;
     }
 
     public function messages(): iterable
@@ -31,11 +71,10 @@ class HvacAssistantAgent implements Agent, Conversational, HasTools
             ->limit(50)
             ->get()
             ->reverse()
-            ->map(function ($message) {
-                // If it's a user message and has attachments, we might pass them, but here we just pass text
-                // Adjust if attachments need to be passed to AI SDK in history.
-                return new Message($message->sender_role, $message->content ?? 'Sent an attachment.');
-            })->all();
+            ->filter(fn ($message) => filled($message->content))
+            ->map(fn ($message) => new Message($message->sender_role, $message->content))
+            ->values()
+            ->all();
     }
 
     public function tools(): iterable
