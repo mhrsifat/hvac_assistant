@@ -13,6 +13,7 @@ use App\Models\ChatMessage;
 use App\Models\HvacModel;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 use function Laravel\Ai\agent;
 
@@ -75,82 +76,105 @@ class ChatService
             throw new \Exception('Chat not found');
         }
 
+        $chat = $this->normalizeAnalyzingState($chat, $chatSlug);
+
         if ($chat->status === 'limitHit') {
             throw new \Exception('Token limit reached for this chat.');
         }
 
-        if (Cache::get("chat_{$chatSlug}_analyzing", false)) {
-            throw new \Exception('Please wait until the current message is processed.');
-        }
+        $statusWasUpdated = Chat::where('id', $chat->id)
+            ->where('status', 'active')
+            ->update(['status' => 'analyzing']);
 
-        $isFirstMessage = ! $chat->messages()->exists();
+        if ($statusWasUpdated === 0) {
+            $chat->refresh();
 
-        $attachmentsData = [];
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                // Returns string like "communication/attachments/xxxx.png"
-                $path = Helper::uploadFile($file, 'communication/attachments', 'chat');
-
-                // Format matching Demo structure
-                $attachmentsData[] = [
-                    'url' => $path,
-                    'mimeType' => $file->getMimeType(),
-                    'name' => $file->getClientOriginalName(),
-                    'size' => $file->getSize(),
-                ];
+            if ($chat->status === 'limitHit') {
+                throw new \Exception('Token limit reached for this chat.');
             }
+
+            throw new HttpException(429, 'Please wait until the current message is processed.');
         }
 
-        $content = $request->content;
-        if (empty($content) && ! empty($attachmentsData)) {
-            $content = 'attachments';
-        }
+        try {
+            $isFirstMessage = ! $chat->messages()->exists();
 
-        $message = ChatMessage::create([
-            'chat_id' => $chat->id,
-            'sender_id' => $user->id,
-            'sender_role' => 'user',
-            'content' => $content,
-            'attachments' => empty($attachmentsData) ? null : $attachmentsData,
-        ]);
+            $attachmentsData = [];
+            if ($request->hasFile('files')) {
+                foreach ($request->file('files') as $file) {
+                    // Returns string like "communication/attachments/xxxx.png"
+                    $path = Helper::uploadFile($file, 'communication/attachments', 'chat');
 
-        // Estimate token usage (e.g. 1 word ≈ 1.3 tokens, min 5 tokens)
-        $wordCount = $request->content ? str_word_count($request->content) : 0;
-        $messageTokens = max(5, (int) ($wordCount * 1.3));
-        $chat->increment('tokens', $messageTokens);
-
-        if ($chat->tokens >= 500) {
-            $chat->update(['status' => 'limitHit']);
-        }
-
-        if ($isFirstMessage) {
-            try {
-                $aiResponse = agent(
-                    instructions: 'Generate a short, concise, and professional title (maximum 3-5 words) for a chat thread based on the user\'s first message. Do not include any quotes, markdown, or surrounding text. Keep it clean.'
-                )->prompt($message->content ?? 'New Chat');
-
-                $newTitle = trim($aiResponse->text);
-
-                if (! empty($newTitle)) {
-                    $chat->update([
-                        'title' => $newTitle,
-                    ]);
-
-                    broadcast(new ChatTitleUpdated($user->username, $chatSlug, $newTitle));
+                    // Format matching Demo structure
+                    $attachmentsData[] = [
+                        'url' => $path,
+                        'mimeType' => $file->getMimeType(),
+                        'name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                    ];
                 }
-            } catch (\Exception $e) {
-                Log::error('Failed to generate chat title with AI: '.$e->getMessage());
             }
+
+            $content = $request->content;
+            if (empty($content) && ! empty($attachmentsData)) {
+                $content = 'attachments';
+            }
+
+            $message = ChatMessage::create([
+                'chat_id' => $chat->id,
+                'sender_id' => $user->id,
+                'sender_role' => 'user',
+                'content' => $content,
+                'attachments' => empty($attachmentsData) ? null : $attachmentsData,
+            ]);
+
+            // Estimate token usage (e.g. 1 word ≈ 1.3 tokens, min 5 tokens)
+            $wordCount = $request->content ? str_word_count($request->content) : 0;
+            $messageTokens = max(5, (int) ($wordCount * 1.3));
+            $chat->increment('tokens', $messageTokens);
+
+            if ($chat->tokens >= 500) {
+                $chat->update(['status' => 'limitHit']);
+            }
+
+            if ($isFirstMessage) {
+                try {
+                    $aiResponse = agent(
+                        instructions: 'Generate a short, concise, and professional title (maximum 3-5 words) for a chat thread based on the user\'s first message. Do not include any quotes, markdown, or surrounding text. Keep it clean.'
+                    )->prompt($message->content ?? 'New Chat');
+
+                    $newTitle = trim($aiResponse->text);
+
+                    if (! empty($newTitle)) {
+                        $chat->update([
+                            'title' => $newTitle,
+                        ]);
+
+                        broadcast(new ChatTitleUpdated($user->username, $chatSlug, $newTitle));
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to generate chat title with AI: ' . $e->getMessage());
+                }
+            }
+
+            // Real-time Status & AI Processing
+            Cache::put("chat_{$chatSlug}_analyzing", true, now()->addMinutes(5));
+            broadcast(new ChatStatusUpdated($user->username, $chatSlug, true));
+            GenerateAiResponseJob::dispatch($chatSlug, $message->id);
+
+            $message->load('chat');
+
+            return new MessageResource($message);
+        } catch (\Throwable $e) {
+            Chat::where('id', $chat->id)
+                ->where('status', 'analyzing')
+                ->update(['status' => 'active']);
+
+            Cache::forget("chat_{$chatSlug}_analyzing");
+            broadcast(new ChatStatusUpdated($user->username, $chatSlug, false));
+
+            throw $e;
         }
-
-        // Real-time Status & AI Processing
-        Cache::put("chat_{$chatSlug}_analyzing", true, now()->addMinutes(5));
-        broadcast(new ChatStatusUpdated($user->username, $chatSlug, true));
-        GenerateAiResponseJob::dispatch($chatSlug, $message->id);
-
-        $message->load('chat');
-
-        return new MessageResource($message);
     }
 
     public function getMessages($user, $chatSlug, $request)
@@ -158,6 +182,9 @@ class ChatService
         $chat = Chat::where('slug', $chatSlug)
             ->where('user_id', $user->id)
             ->firstOrFail();
+
+        $chat = $this->normalizeAnalyzingState($chat, $chatSlug);
+
         $perPage = $this->resolvePerPage($request, 20);
 
         if (! $chat) {
@@ -168,8 +195,36 @@ class ChatService
 
         return [
             'messages' => MessageResource::collection($messages),
-            'is_analyzing' => Cache::get("chat_{$chatSlug}_analyzing", false),
+            'is_analyzing' => $chat->status === 'analyzing',
         ];
+    }
+
+    private function normalizeAnalyzingState(Chat $chat, string $chatSlug): Chat
+    {
+        if ($chat->status !== 'analyzing') {
+            return $chat;
+        }
+
+        $latestMessage = $chat->messages()
+            ->latest('id')
+            ->first(['sender_role']);
+
+        $hasAssistantReply = $latestMessage?->sender_role === 'assistant';
+        $isStale = $chat->updated_at !== null && $chat->updated_at->lt(now()->subMinutes(5));
+
+        if (! $hasAssistantReply && ! $isStale) {
+            return $chat;
+        }
+
+        $nextStatus = $chat->tokens >= 500 ? 'limitHit' : 'active';
+
+        $chat->update([
+            'status' => $nextStatus,
+        ]);
+
+        Cache::forget("chat_{$chatSlug}_analyzing");
+
+        return $chat->fresh() ?? $chat;
     }
 
     protected function resolvePerPage($request, int $default): int

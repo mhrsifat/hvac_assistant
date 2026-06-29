@@ -25,5 +25,16 @@ services:
     depends_on:
       - postgres_vector
 
+  redis:
+    image: redis:alpine
+    container_name: hvac_redis
+    restart: always
+    ports:
+      - '127.0.0.1:6381:6379'
+    command: redis-server --requirepass "what_the_hell_is_this_password" --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+
 volumes:
   pg_vector_data:
+  redis_data:

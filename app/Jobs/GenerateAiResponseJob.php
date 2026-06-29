@@ -46,6 +46,8 @@ class GenerateAiResponseJob implements ShouldQueue
 
         $userMessage = ChatMessage::find($this->messageId);
         if (! $userMessage) {
+            $this->completeAnalyzing($chat, $username);
+
             return;
         }
 
@@ -101,23 +103,26 @@ class GenerateAiResponseJob implements ShouldQueue
                 $chat->update(['status' => 'limitHit']);
             }
 
-            // Clear cache
-            Cache::forget("chat_{$this->chatSlug}_analyzing");
-
             // Load relation for resource
             $aiMessage->load('chat');
             $aiMessageResource = new MessageResource($aiMessage);
 
-            // Fire events
-            broadcast(new ChatStatusUpdated($username, $this->chatSlug, false));
-
             // We resolve the resource to array because broadcast needs a primitive/array
             broadcast(new NewMessageReceived($username, $this->chatSlug, json_decode($aiMessageResource->toJson(), true)));
-
         } catch (\Exception $e) {
-            Log::error('AI Response generation failed: '.$e->getMessage());
-            Cache::forget("chat_{$this->chatSlug}_analyzing");
-            broadcast(new ChatStatusUpdated($username, $this->chatSlug, false));
+            Log::error('AI Response generation failed: ' . $e->getMessage());
+        } finally {
+            $this->completeAnalyzing($chat, $username);
         }
+    }
+
+    private function completeAnalyzing(Chat $chat, string $username): void
+    {
+        Chat::where('id', $chat->id)
+            ->where('status', 'analyzing')
+            ->update(['status' => 'active']);
+
+        Cache::forget("chat_{$this->chatSlug}_analyzing");
+        broadcast(new ChatStatusUpdated($username, $this->chatSlug, false));
     }
 }

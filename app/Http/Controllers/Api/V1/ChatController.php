@@ -9,6 +9,7 @@ use App\Services\Api\V1\ChatService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ChatController extends Controller
 {
@@ -44,8 +45,12 @@ class ChatController extends Controller
             $message = $this->chatService->sendMessage($request->user(), $chat_slug, $request);
 
             return $this->success(201, 'Message sent successfully.', $message);
-        } catch (\Exception $e) {
-            return $this->error(500, $e->getMessage(), [], 'message');
+        } catch (\Throwable $e) {
+            $statusCode = $e instanceof HttpExceptionInterface
+                ? $e->getStatusCode()
+                : 500;
+
+            return $this->error($statusCode, $e->getMessage(), [], 'message');
         }
     }
 
@@ -55,7 +60,6 @@ class ChatController extends Controller
             $messages = $this->chatService->getMessages($request->user(), $chat_slug, $request);
 
             return $this->success(200, 'Messages retrieved successfully.', $messages);
-
         } catch (\Exception $e) {
             return $this->error(500, $e->getMessage());
         }

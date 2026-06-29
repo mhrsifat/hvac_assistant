@@ -11,9 +11,7 @@
 /resources/js/wayfinder
 /vendor
 .DS_Store
-.env
 .env.backup
-.env.production
 .env.prod.*
 .env.testing
 .phpactor.json
@@ -26,6 +24,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
-/.vscode
 /.zed
 
+config.bat
